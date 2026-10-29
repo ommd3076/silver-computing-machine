@@ -6,7 +6,7 @@
 
 | Document | Purpose and boundary | Depends on / owner |
 |---|---|---|
-| `PRD.md` | Active QML-01 problem, users, mandatory outputs, measurable acceptance criteria, exclusions and judging constraints. Cite the official source PDF; identify assumptions separately. | Official source extraction; owner approves problem framing. |
+| `PRD.md` | Active QML-01 problem, users, mandatory outputs, measurable acceptance criteria, exclusions and evaluation constraints. Cite the official source PDF; identify assumptions separately. | Official source extraction; owner approves problem framing. |
 | `TRD.md` | Mathematical requirements, constraints, prediction outputs, candidate/solver boundaries, data requirements, metrics and technical constraints. Specify testable requirements, not unverified SDK methods. | Approved PRD; SDK evidence; M1 + M2 proposal. |
 | `architecture.md` | Module boundaries, data flow, interface contracts, environment topology, failure paths and portable execution split. | Approved PRD/TRD; SDK and Legion inventory; owner approves design. |
 | `research-hypothesis.md` | B+C research claim candidates, prior art, counterarguments, novelty risks, falsifiable hypotheses and stopping criteria. Avoid novelty claims until literature review. | Bounded prior-art review; M1/M2; explicit unknowns. |

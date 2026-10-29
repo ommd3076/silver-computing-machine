@@ -108,7 +108,7 @@ passes with `100%` of OR-Tools-pruned QAOA dispatches validated independently by
 
 ## M4: End-to-End Demo CLI & Final Documentation Sync
 
-**Goal:** Provide a single deterministic CLI script (`tools/demo_cli.py`) that exercises every major ArQ flow (Classical Exact, 4-Param Decision VQC, LP Warm-Start QAOA, CRN Risk/CVaR, and Locked-Prefix Disruption Recovery) and prints a judge-ready comparison table with independent validator badges.
+**Goal:** Provide a single deterministic CLI script (`tools/demo_cli.py`) that exercises every major ArQ flow (Classical Exact, 4-Param Decision VQC, LP Warm-Start QAOA, CRN Risk/CVaR, and Locked-Prefix Disruption Recovery) and prints an audit-ready comparison table with independent validator badges.
 
 ### Tasks
 - [ ] **M4.1 — Build Self-Contained ArQ Demo CLI (`tools/demo_cli.py`):** Support both in-process mode (works in zero-install `.venv`) and `--base-url http://127.0.0.1:8000` HTTP mode (works against running Uvicorn), outputting formatted tables of vehicle routes, stop ETAs, USD costs, QAOA feasible-shot rates, CVaR exposure, recovery diffs, and validator pass/fail status.
