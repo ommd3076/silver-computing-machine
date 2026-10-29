@@ -73,8 +73,10 @@ from backend.qpiai_vqc import sdk_statevector, sdk_expectation_z0
 from backend.qpiai_service import QpiAIService
 from backend.api import app
 from backend.domain import generate_routes
-from backend.qubo import build_route_qubo
+from backend.validator import validate_plan
+from backend.qubo import build_route_qubo, validate_selection
 from backend.qaoa import continuous_relaxation, exhaustive_optimum
+from backend.qaoa_dispatch import _plan_for_bits
 from backend.qpiai_adapter import run_qpiai_warm_start
 from fastapi.testclient import TestClient
 
@@ -132,7 +134,7 @@ class EvidenceBuilder:
         self.checks.append((check_id, name, status))
 
     def build_live_report(self) -> str:
-        """Constructs a compact live terminal execution trace (20-35 lines)."""
+        """Constructs a compact live terminal execution trace (25-35 lines)."""
         now_dt = datetime.datetime.now(datetime.timezone.utc)
         req_timestamp = now_dt.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
         req_id = f"req_{hashlib.md5(f'{now_dt.isoformat()}-live'.encode()).hexdigest()[:12]}"
@@ -141,7 +143,7 @@ class EvidenceBuilder:
         scenario_fixture_path = _root / "experiments_qaoa" / "dispatch_fixture.json"
         scenario_data = json.loads(scenario_fixture_path.read_text(encoding="utf-8"))
 
-        # Real FastAPI TestClient call
+        # 1. Genuine FastAPI reference-QAOA execution via TestClient
         client = TestClient(app)
         t_req_start = time.perf_counter()
         http_response = client.post(
@@ -151,8 +153,13 @@ class EvidenceBuilder:
         t_req_dur_ms = (time.perf_counter() - t_req_start) * 1000.0
         http_status = http_response.status_code
         http_body = http_response.json() if http_status == 200 else {}
+        api_decision = http_body.get("decision", {})
+        api_validation = api_decision.get("validation", {})
+        api_plan = api_decision.get("plan", {})
+        api_valid = (http_status == 200 and api_validation.get("valid") is True)
 
-        # Parallel QpiAI Opt adapter execution for verified mathematics & telemetry
+        # 2. Separate QpiAI Opt SDK compilation & execution
+        t_sdk_start = time.perf_counter()
         route_pool = generate_routes(scenario_data)
         candidates_pool = [
             {"id": f"{r['vehicle_id']}:{i}:" + ",".join(r["order_ids"]),
@@ -162,35 +169,87 @@ class EvidenceBuilder:
         qubo_live = build_route_qubo(candidates_pool, [o["id"] for o in scenario_data["orders"]])
         relax_live = continuous_relaxation(qubo_live)
         aligned_live = [min(0.75, max(0.25, p)) for p in relax_live]
-        sdk_trace_res = run_qpiai_warm_start(
+        sdk_res = run_qpiai_warm_start(
             qubo_live, aligned_live, gamma=0.15, beta=0.35, shots=128, seed=42
         )
+        t_sdk_dur_ms = (time.perf_counter() - t_sdk_start) * 1000.0
+
+        sdk_status = sdk_res.get("status", "unknown")
+        sdk_backend = sdk_res.get("backend", "Unknown")
+        sdk_raw_counts = sdk_res.get("raw_counts", {})
+        sdk_shots_returned = sum(sdk_raw_counts.values()) if isinstance(sdk_raw_counts, dict) else 0
+
+        # 3. Decode & independently validate the SDK's actual returned bitstrings
+        sdk_feasible_samples: list[dict[str, Any]] = []
+        for bitstring, count in sdk_raw_counts.items():
+            bits = [int(x) for x in bitstring]
+            v = validate_selection(qubo_live, bits)
+            if v.get("feasible"):
+                candidate_plan = _plan_for_bits(route_pool, bitstring)
+                plan_val = validate_plan(scenario_data, candidate_plan)
+                if plan_val.get("valid"):
+                    sdk_feasible_samples.append({
+                        "bits": bitstring,
+                        "count": count,
+                        "business_cost": v.get("business_cost", 0.0),
+                        "selected_ids": v.get("selected_route_ids", []),
+                        "plan": candidate_plan,
+                        "validation": plan_val,
+                    })
+
+        sdk_sample_pass = (sdk_status == "success" and len(sdk_feasible_samples) > 0)
+
+        # Pick the best feasible bitstring returned by the SDK
+        if sdk_feasible_samples:
+            best_sdk_sample = min(sdk_feasible_samples, key=lambda s: (s["business_cost"], s["bits"]))
+            sdk_best_bits = best_sdk_sample["bits"]
+            sdk_best_count = best_sdk_sample["count"]
+            sdk_best_plan = best_sdk_sample["plan"]
+            sdk_best_val = best_sdk_sample["validation"]
+            sdk_cand_id = best_sdk_sample["selected_ids"][0] if best_sdk_sample["selected_ids"] else "V2:7:B,A"
+            sdk_routes = sdk_best_plan.get("routes", [])
+            sdk_assigned_vehicle = sdk_routes[0].get("vehicle_id", "V2") if sdk_routes else "V2"
+            sdk_stops = sdk_routes[0].get("stops", []) if sdk_routes else []
+            stops_str = " -> ".join(f"Stop {s['order_id']} (arr {s['arrival']:.0f}m)" for s in sdk_stops) if sdk_stops else "Stop B (arr 2m) -> Stop A (arr 4m)"
+            sdk_cost = sdk_best_plan.get("objective", 4.0)
+            sdk_travel = sdk_best_plan.get("travel_cost", 4.0)
+            sdk_lateness = sdk_best_plan.get("lateness_exposure", 0.0)
+            sdk_feasible_label = "FEASIBLE"
+        else:
+            sdk_best_bits = "NONE"
+            sdk_best_count = 0
+            sdk_cand_id = "NONE"
+            sdk_assigned_vehicle = "NONE"
+            stops_str = "NONE"
+            sdk_cost = 0.0
+            sdk_travel = 0.0
+            sdk_lateness = 0.0
+            sdk_feasible_label = "INFEASIBLE"
+
+        # 4. Independent exhaustive optimum parity verification
         brute_force_opt = exhaustive_optimum(qubo_live)
-
-        decision = http_body.get("decision", {})
-        plan = decision.get("plan", {})
-        validation = decision.get("validation", {})
-        plan_routes = plan.get("routes", [])
-
-        num_vars = qubo_live.n
-        num_terms = len(sdk_trace_res.get("compiled_qubo_validation", {}).get("sdk_upper_terms", {}))
-        is_feasible = validation.get("valid") is True and validation.get("feasible") is True
-        feasibility_label = "FEASIBLE" if is_feasible else "INFEASIBLE"
-
-        cand_id = "V2:B,A"
-        assigned_vehicle = "V2"
-        route_stops = []
-        if plan_routes:
-            assigned_vehicle = plan_routes[0].get("vehicle_id", "V2")
-            cand_id = f"{assigned_vehicle}:" + ",".join(plan_routes[0].get("order_ids", []))
-            route_stops = plan_routes[0].get("stops", [])
-
-        stops_str = " -> ".join(f"Stop {s['order_id']} (arr {s['arrival']:.0f}m)" for s in route_stops) if route_stops else "Stop B (arr 2m) -> Stop A (arr 4m)"
-
-        obj_cost = plan.get("objective", 4.0)
         bf_cost = brute_force_opt.get("business_cost", 4.0)
-        is_globally_optimal = (abs(obj_cost - bf_cost) < 1e-6)
+        is_globally_optimal = (sdk_sample_pass and abs(sdk_cost - bf_cost) < 1e-6)
         optimality_label = "GLOBAL OPTIMUM VERIFIED" if is_globally_optimal else "LOCAL/SUBOPTIMAL"
+
+        # 5. Genuine QCloud authentication status check
+        service = QpiAIService()
+        auth_status = service.check_connection()
+        qcloud_authenticated = bool(auth_status.get("quantum", {}).get("authenticated"))
+        qcloud_label = (
+            "REST authentication verified (HTTP 200); remote job dispatch NOT RUN (zero spend)"
+            if qcloud_authenticated
+            else "REST authentication unverified; remote job dispatch NOT RUN (zero spend)"
+        )
+
+        # 6. Overall success evaluation requires all claimed checks to pass
+        overall_success = (
+            api_valid
+            and sdk_status == "success"
+            and sdk_sample_pass
+            and is_globally_optimal
+        )
+        status_label = "SUCCESS" if overall_success else "FAILED"
 
         qpiai_quantum_ver = importlib.metadata.version("qpiai-quantum")
         try:
@@ -198,35 +257,45 @@ class EvidenceBuilder:
         except Exception:
             qpiai_opt_ver = "0.0.9"
 
+        num_vars = qubo_live.n
+        num_terms = len(sdk_res.get("compiled_qubo_validation", {}).get("sdk_upper_terms", {}))
+        num_feasible_shots = sum(s["count"] for s in sdk_feasible_samples)
+
         live_lines = [
             "=" * 78,
             "  DEBUGLEAF HYBRID QUANTUM FLEET DISPATCH - LIVE EXECUTION",
             "=" * 78,
-            f"Runtime: Python {platform.python_version()} | QpiAI-Quantum {qpiai_quantum_ver} | QpiAI-Opt {qpiai_opt_ver} | Backend: QpiAI-QSV-Local",
+            f"Runtime: Python {platform.python_version()} | QpiAI-Quantum {qpiai_quantum_ver} | QpiAI-Opt {qpiai_opt_ver} | Local CPU Simulator",
             "",
-            f"[DEBUGLEAF API] {req_timestamp} | Inbound POST /api/v1/scenarios/qaoa via FastAPI TestClient ({req_id})",
+            f"[DEBUGLEAF API] Inbound POST /api/v1/scenarios/qaoa via FastAPI TestClient ({req_id})",
             f"[DEBUGLEAF API] Scenario validated: {len(scenario_data['vehicles'])} vehicles (V1, V2), {len(scenario_data['orders'])} orders (A, B), max_capacity=2",
-            f"[DEBUGLEAF API] Candidate routes generated: {len(candidates_pool)} feasible route variables across fleet",
-            f"[QPIAI OPT] Compiling QUBO Hamiltonian ({num_vars} binary vars, {num_terms} quadratic terms)",
+            f"[DEBUGLEAF API] Candidate pool: {len(candidates_pool)} feasible route variables generated across fleet",
+            f"[DEBUGLEAF API] Reference QAOA endpoint response: HTTP {http_status} OK (Round-Trip: {t_req_dur_ms:.2f} ms)",
+            f"[DEBUGLEAF API] Reference solver decision: origin='{api_decision.get('origin', 'none')}' (Selected Route Cost={api_plan.get('objective', 0.0):.2f})",
+            "",
+            f"[QPIAI OPT] Model compiled: {num_vars} binary variables, {num_terms} upper-triangular QUBO terms",
             f"[QPIAI OPT] QUBO constraint penalties applied: Order coverage (Pc={qubo_live.coverage_penalty:.1f}), Fleet capacity (Pv={qubo_live.vehicle_penalty:.1f})",
             f"[QPIAI OPT] Continuous relaxation solved: warm-start vector initialized in [0.25, 0.75]",
             f"[QPIAI QUANTUM] QAOA ansatz constructed: 8 qubits, depth=14 gates (gamma=0.15, beta=0.35)",
-            f"[SOLVER] StatevectorSimulator dispatched: 128 shots, seed=42, backend='QpiAI-QSV-Local'",
-            f"[SOLVER] Sampling complete: bitstring decoded -> Selected candidate '{cand_id}'",
-            f"[VALIDATOR] Domain constraints check: All orders covered exactly once, capacity <= 2 ({feasibility_label})",
-            f"[VALIDATOR] Solution optimality: Objective {obj_cost:.2f} == Exhaustive Feasible Optimum {bf_cost:.2f} ({optimality_label})",
-            f"[RESULT] Computed Dispatch Plan: Vehicle {assigned_vehicle} -> Depot D -> {stops_str} -> Depot D",
-            f"[RESULT] Performance Metrics: Travel Time={plan.get('travel_cost', 4.0):.2f}m | SLA Delay Exposure={plan.get('lateness_exposure', 0.0):.2f}m | Cost={obj_cost:.2f}",
-            f"[DEBUGLEAF ETA] Operational ETA: GBDT-only (alpha=0.0 deployed) | VQC: residual delta diagnostics",
-            f"[DEBUGLEAF API] Inbound request resolved: HTTP {http_status} OK via FastAPI TestClient (Round-Trip Latency: {t_req_dur_ms:.2f} ms)",
+            f"[SOLVER] QpiAI SDK StatevectorSimulator executed: 128 shots, seed=42, runtime={t_sdk_dur_ms:.2f} ms",
+            f"[SOLVER] SDK Adapter Status: status='{sdk_status}' | Backend: '{sdk_backend}'",
+            f"[SOLVER] SDK Sampling Result: {sdk_shots_returned} shots returned, {num_feasible_shots} feasible samples across {len(sdk_feasible_samples)} candidate bitstrings",
+            f"[VALIDATOR] SDK Sample Decoding: Bitstring '{sdk_best_bits}' verified in SDK counts (count={sdk_best_count}) -> Candidate '{sdk_cand_id}'",
+            f"[VALIDATOR] Domain Constraints Check: All orders covered exactly once, capacity <= 2 ({sdk_feasible_label})",
+            f"[VALIDATOR] Solution Optimality: Objective {sdk_cost:.2f} == Exhaustive Feasible Optimum {bf_cost:.2f} ({optimality_label})",
+            "",
+            f"[RESULT] Computed Dispatch Plan: Vehicle {sdk_assigned_vehicle} -> Depot D -> {stops_str} -> Depot D",
+            f"[RESULT] Performance Metrics: Travel Time={sdk_travel:.2f}m | SLA Delay Exposure={sdk_lateness:.2f}m | Business Cost={sdk_cost:.2f}",
+            f"[DEBUGLEAF POLICY] Frozen operational policy: GBDT-only ETA (alpha=0.0); VQC residual correction not deployed",
             "",
             "Execution Provenance & Safety Policy:",
-            "  - Local Simulator:  qpiai_quantum.simulator.StatevectorSimulator (EXECUTED)",
-            "  - Remote QCloud:    Authentication verified; remote job dispatch NOT RUN (zero spend governed)",
+            f"  - Local Simulator:  qpiai_quantum.simulator.StatevectorSimulator ({'EXECUTED - PASS' if sdk_status == 'success' else 'FAILED'})",
+            f"  - Remote QCloud:    {qcloud_label}",
             "=" * 78,
-            f"  END OF LIVE EXECUTION TRACE - STATUS: {'SUCCESS' if http_status == 200 and is_feasible else 'FAILED'}",
+            f"  END OF LIVE EXECUTION TRACE - STATUS: {status_label}",
             "=" * 78,
         ]
+        return "\n".join(live_lines)
         return "\n".join(live_lines)
 
     def build_report(self) -> str:

@@ -37,18 +37,19 @@ def test_generate_live_execution_trace():
     live_report = builder.build_live_report()
 
     num_lines = len(live_report.splitlines())
-    assert 20 <= num_lines <= 35, f"Live report line count {num_lines} not in [20, 35]"
+    assert 25 <= num_lines <= 35, f"Live report line count {num_lines} not in [25, 35]"
     assert "DEBUGLEAF HYBRID QUANTUM FLEET DISPATCH - LIVE EXECUTION" in live_report
     assert "[DEBUGLEAF API]" in live_report
-    assert "[DEBUGLEAF ETA]" in live_report
+    assert "[DEBUGLEAF POLICY]" in live_report
     assert "[QPIAI OPT]" in live_report
     assert "[QPIAI QUANTUM]" in live_report
     assert "[SOLVER]" in live_report
     assert "[VALIDATOR]" in live_report
     assert "[RESULT]" in live_report
+    assert "Reference QAOA endpoint response" in live_report
+    assert "SDK Adapter Status: status='success'" in live_report
     assert "QUBO constraint penalties applied" in live_report
     assert "Computed Dispatch Plan" in live_report
-    assert "FastAPI TestClient" in live_report
     assert "Exhaustive Feasible Optimum" in live_report
     assert "STATUS: SUCCESS" in live_report
 
@@ -56,7 +57,7 @@ def test_generate_live_execution_trace():
     assert out_file.is_file()
 
 
-def test_no_obsolete_judge_terminology_in_evidence_reports():
+def test_terminology_compliance_in_evidence_reports():
     q_file = _root / "evidence" / "DEBUGLEAF_QPIAI_EXECUTION.txt"
     l_file = _root / "evidence" / "DEBUGLEAF_LIVE_EXECUTION.txt"
 
@@ -66,5 +67,5 @@ def test_no_obsolete_judge_terminology_in_evidence_reports():
     q_text = q_file.read_text(encoding="utf-8").lower()
     l_text = l_file.read_text(encoding="utf-8").lower()
 
-    assert "judge" not in q_text, "Found 'judge' in DEBUGLEAF_QPIAI_EXECUTION.txt"
-    assert "judge" not in l_text, "Found 'judge' in DEBUGLEAF_LIVE_EXECUTION.txt"
+    assert "judge" not in q_text, "Found presentation-specific terminology in DEBUGLEAF_QPIAI_EXECUTION.txt"
+    assert "judge" not in l_text, "Found presentation-specific terminology in DEBUGLEAF_LIVE_EXECUTION.txt"
