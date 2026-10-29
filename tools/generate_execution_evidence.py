@@ -31,6 +31,19 @@ _root = Path(__file__).resolve().parent.parent
 if str(_root) not in sys.path:
     sys.path.insert(0, str(_root))
 
+# Auto-switch to repository .venv python if running in an external interpreter lacking dependencies
+_venv_python_win = _root / ".venv" / "Scripts" / "python.exe"
+_venv_python_posix = _root / ".venv" / "bin" / "python"
+_target_python = _venv_python_win if _venv_python_win.exists() else _venv_python_posix
+
+if _target_python.exists() and Path(sys.executable).resolve() != _target_python.resolve():
+    try:
+        import qpiai_quantum
+        import fastapi
+    except ImportError:
+        res = subprocess.run([str(_target_python), *sys.argv])
+        sys.exit(res.returncode)
+
 # Initialize native QpiAI SDK runtimes at top-level before joblib/sklearn
 import qpiai_quantum
 from qpiai_quantum import Circuit
