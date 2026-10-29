@@ -1,0 +1,48 @@
+{
+  "description": "Deterministic demo scenario and route fixtures for DebugLeaf mobile edge integration",
+  "version": "1.0.0",
+  "vehicles": [
+    {
+      "vehicle_id": "vehicle_1",
+      "driver_id": "driver_1",
+      "driver_name": "Ramesh Kumar",
+      "default_code": "PAIR01",
+      "corridor_id": "corridor_a_expressway",
+      "default_route_id": "route_v1_primary",
+      "alternate_route_id": "route_v1_bypass",
+      "stops": ["depot", "stop_1", "stop_2", "depot"]
+    },
+    {
+      "vehicle_id": "vehicle_2",
+      "driver_id": "driver_2",
+      "driver_name": "Suresh Sharma",
+      "default_code": "PAIR02",
+      "corridor_id": "corridor_c_south",
+      "default_route_id": "route_v2_primary",
+      "alternate_route_id": null,
+      "stops": ["depot", "stop_3", "stop_4", "depot"]
+    }
+  ],
+  "incidents": [
+    {
+      "incident_id": "inc_nh48_heavy_01",
+      "target_segment_id": "seg_nh48_exp",
+      "severity": "heavy",
+      "delay_seconds": 480.0,
+      "ttl_seconds": 300,
+      "expected_outcome": "PUBLISHED_NEW_ROUTE",
+      "new_route_id": "route_v1_bypass",
+      "expected_time_saved_seconds": 240.0
+    },
+    {
+      "incident_id": "inc_nh48_mod_01",
+      "target_segment_id": "seg_nh48_exp",
+      "severity": "moderate",
+      "delay_seconds": 180.0,
+      "ttl_seconds": 300,
+      "expected_outcome": "KEEP",
+      "new_route_id": null,
+      "expected_time_saved_seconds": 0.0
+    }
+  ]
+}

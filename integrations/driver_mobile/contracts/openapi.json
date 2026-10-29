@@ -1,0 +1,997 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "DebugLeaf Driver Mobile API",
+    "description": "Isolated driver edge integration and synchronisation API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/demo/sessions": {
+      "post": {
+        "tags": [
+          "Driver Mobile Demo"
+        ],
+        "summary": "Redeem Session",
+        "description": "Redeem a one-time pairing code for an opaque driver bearer session token.",
+        "operationId": "redeem_session_api_v1_demo_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PairingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/demo/sessions/current": {
+      "delete": {
+        "tags": [
+          "Driver Mobile Demo"
+        ],
+        "summary": "Revoke Current Session",
+        "description": "Revoke driver's current session token.",
+        "operationId": "revoke_current_session_api_v1_demo_sessions_current_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Revoke Current Session Api V1 Demo Sessions Current Delete"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/demo/me": {
+      "get": {
+        "tags": [
+          "Driver Mobile Demo"
+        ],
+        "summary": "Get Me",
+        "description": "Return server-verified driver identity from bearer session.",
+        "operationId": "get_me_api_v1_demo_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverIdentityResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/demo/state": {
+      "get": {
+        "tags": [
+          "Driver Mobile Demo"
+        ],
+        "summary": "Get State",
+        "description": "Fetch authoritative driver route state, GeoJSON polyline, stops, and version.",
+        "operationId": "get_state_api_v1_demo_state_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverStateResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/demo/reports": {
+      "post": {
+        "tags": [
+          "Driver Mobile Demo"
+        ],
+        "summary": "Report Congestion",
+        "description": "Submit driver congestion report; re-scores routes and auto-publishes if warranted.",
+        "operationId": "report_congestion_api_v1_demo_reports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CongestionReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CongestionReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/demo/route-requests": {
+      "post": {
+        "tags": [
+          "Driver Mobile Demo"
+        ],
+        "summary": "Request Plan Route",
+        "description": "Manually trigger candidate evaluation from driver cockpit.",
+        "operationId": "request_plan_route_api_v1_demo_route_requests_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoutePlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutePlanResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/demo/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "Driver Mobile Demo"
+        ],
+        "summary": "Get Job Status",
+        "description": "Inspect durable planning job status. Enforces driver ownership.",
+        "operationId": "get_job_status_api_v1_demo_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/demo/acknowledgements": {
+      "post": {
+        "tags": [
+          "Driver Mobile Demo"
+        ],
+        "summary": "Submit Acknowledgement",
+        "description": "Acknowledge rendered route version on mobile client.",
+        "operationId": "submit_acknowledgement_api_v1_demo_acknowledgements_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcknowledgementRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcknowledgementResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/demo/dispatcher/overview": {
+      "get": {
+        "tags": [
+          "Driver Mobile Demo"
+        ],
+        "summary": "Get Dispatcher Overview",
+        "description": "Fleet status overview for arQ dashboard or integration operator console.",
+        "operationId": "get_dispatcher_overview_api_v1_demo_dispatcher_overview_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DispatcherOverviewResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AcknowledgementRequest": {
+        "properties": {
+          "route_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Route Version",
+            "description": "Route version rendered and acknowledged"
+          },
+          "client_timestamp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Timestamp",
+            "description": "Client ISO timestamp"
+          },
+          "driver_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver Id",
+            "description": "Optional driver ID; if provided, must match session driver"
+          }
+        },
+        "type": "object",
+        "required": [
+          "route_version"
+        ],
+        "title": "AcknowledgementRequest"
+      },
+      "AcknowledgementResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "acknowledged"
+          },
+          "driver_id": {
+            "type": "string",
+            "title": "Driver Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver_id",
+          "version"
+        ],
+        "title": "AcknowledgementResponse"
+      },
+      "CongestionReportRequest": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Event Id",
+            "description": "Client idempotency key"
+          },
+          "base_route_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Base Route Version",
+            "description": "Driver's current route version"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "description": "Incident kind",
+            "default": "congestion"
+          },
+          "severity": {
+            "type": "string",
+            "pattern": "^(moderate|heavy)$",
+            "title": "Severity",
+            "description": "'moderate' or 'heavy'"
+          },
+          "segment_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segment Id",
+            "description": "Optional segment ID on the active route"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note",
+            "description": "Optional incident note",
+            "default": ""
+          },
+          "driver_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver Id",
+            "description": "Optional driver ID; if provided, must match session driver"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "base_route_version",
+          "severity"
+        ],
+        "title": "CongestionReportRequest"
+      },
+      "CongestionReportResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "accepted"
+          },
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "delay_applied_seconds": {
+            "type": "number",
+            "title": "Delay Applied Seconds"
+          },
+          "segment_id": {
+            "type": "string",
+            "title": "Segment Id"
+          },
+          "decision": {
+            "type": "string",
+            "title": "Decision"
+          },
+          "published_new_route": {
+            "type": "boolean",
+            "title": "Published New Route"
+          },
+          "current_route_version": {
+            "type": "integer",
+            "title": "Current Route Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "job_id",
+          "delay_applied_seconds",
+          "segment_id",
+          "decision",
+          "published_new_route",
+          "current_route_version"
+        ],
+        "title": "CongestionReportResponse"
+      },
+      "DispatcherDriverSummary": {
+        "properties": {
+          "driver_id": {
+            "type": "string",
+            "title": "Driver Id"
+          },
+          "driver_name": {
+            "type": "string",
+            "title": "Driver Name"
+          },
+          "vehicle_id": {
+            "type": "string",
+            "title": "Vehicle Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "route_version": {
+            "type": "integer",
+            "title": "Route Version"
+          },
+          "corridor": {
+            "type": "string",
+            "title": "Corridor"
+          },
+          "last_ack_version": {
+            "type": "integer",
+            "title": "Last Ack Version"
+          },
+          "active_delay_seconds": {
+            "type": "number",
+            "title": "Active Delay Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver_id",
+          "driver_name",
+          "vehicle_id",
+          "status",
+          "route_version",
+          "corridor",
+          "last_ack_version",
+          "active_delay_seconds"
+        ],
+        "title": "DispatcherDriverSummary"
+      },
+      "DispatcherIncidentSummary": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "driver_id": {
+            "type": "string",
+            "title": "Driver Id"
+          },
+          "segment_id": {
+            "type": "string",
+            "title": "Segment Id"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "delay_seconds": {
+            "type": "number",
+            "title": "Delay Seconds"
+          },
+          "reported_at": {
+            "type": "string",
+            "title": "Reported At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "driver_id",
+          "segment_id",
+          "severity",
+          "delay_seconds",
+          "reported_at"
+        ],
+        "title": "DispatcherIncidentSummary"
+      },
+      "DispatcherOverviewResponse": {
+        "properties": {
+          "drivers": {
+            "items": {
+              "$ref": "#/components/schemas/DispatcherDriverSummary"
+            },
+            "type": "array",
+            "title": "Drivers"
+          },
+          "active_incidents": {
+            "items": {
+              "$ref": "#/components/schemas/DispatcherIncidentSummary"
+            },
+            "type": "array",
+            "title": "Active Incidents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "drivers",
+          "active_incidents"
+        ],
+        "title": "DispatcherOverviewResponse"
+      },
+      "DriverIdentityResponse": {
+        "properties": {
+          "driver_id": {
+            "type": "string",
+            "title": "Driver Id"
+          },
+          "vehicle_id": {
+            "type": "string",
+            "title": "Vehicle Id"
+          },
+          "driver_name": {
+            "type": "string",
+            "title": "Driver Name"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "default": "driver"
+          },
+          "simulation_mode": {
+            "type": "boolean",
+            "title": "Simulation Mode",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver_id",
+          "vehicle_id",
+          "driver_name"
+        ],
+        "title": "DriverIdentityResponse"
+      },
+      "DriverStateResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "default": "1.0.0"
+          },
+          "driver_id": {
+            "type": "string",
+            "title": "Driver Id"
+          },
+          "vehicle_id": {
+            "type": "string",
+            "title": "Vehicle Id"
+          },
+          "route_id": {
+            "type": "string",
+            "title": "Route Id"
+          },
+          "corridor_id": {
+            "type": "string",
+            "title": "Corridor Id"
+          },
+          "route_version": {
+            "type": "integer",
+            "title": "Route Version"
+          },
+          "manifest_revision": {
+            "type": "integer",
+            "title": "Manifest Revision"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "en_route"
+          },
+          "estimated_duration_seconds": {
+            "type": "number",
+            "title": "Estimated Duration Seconds"
+          },
+          "estimated_distance_metres": {
+            "type": "number",
+            "title": "Estimated Distance Metres"
+          },
+          "active_overlays": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Active Overlays"
+          },
+          "simulation_mode": {
+            "type": "boolean",
+            "title": "Simulation Mode",
+            "default": true
+          },
+          "data_provenance": {
+            "type": "string",
+            "title": "Data Provenance",
+            "default": "synthetic_delhivery_v1"
+          },
+          "geojson": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geojson"
+          },
+          "stops": {
+            "items": {
+              "$ref": "#/components/schemas/StopInfo"
+            },
+            "type": "array",
+            "title": "Stops"
+          },
+          "last_ack_version": {
+            "type": "integer",
+            "title": "Last Ack Version",
+            "default": 0
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "driver_id",
+          "vehicle_id",
+          "route_id",
+          "corridor_id",
+          "route_version",
+          "manifest_revision",
+          "estimated_duration_seconds",
+          "estimated_distance_metres",
+          "updated_at"
+        ],
+        "title": "DriverStateResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "JobResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status"
+        ],
+        "title": "JobResponse"
+      },
+      "PairingRequest": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Code",
+            "description": "One-time pairing code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "PairingRequest"
+      },
+      "PairingResponse": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token",
+            "description": "Opaque driver bearer token"
+          },
+          "expires_at": {
+            "type": "string",
+            "title": "Expires At",
+            "description": "ISO-8601 session expiration timestamp"
+          },
+          "driver_id": {
+            "type": "string",
+            "title": "Driver Id",
+            "description": "Assigned driver ID"
+          },
+          "vehicle_id": {
+            "type": "string",
+            "title": "Vehicle Id",
+            "description": "Assigned vehicle ID"
+          },
+          "driver_name": {
+            "type": "string",
+            "title": "Driver Name",
+            "description": "Driver full name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "expires_at",
+          "driver_id",
+          "vehicle_id",
+          "driver_name"
+        ],
+        "title": "PairingResponse"
+      },
+      "RoutePlanRequest": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Request Id",
+            "description": "Client idempotency key"
+          },
+          "base_route_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Base Route Version",
+            "description": "Driver's current route version"
+          },
+          "driver_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver Id",
+            "description": "Optional driver ID; if provided, must match session driver"
+          }
+        },
+        "type": "object",
+        "required": [
+          "request_id",
+          "base_route_version"
+        ],
+        "title": "RoutePlanRequest"
+      },
+      "RoutePlanResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "completed"
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome"
+          },
+          "result": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Result"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "outcome",
+          "result"
+        ],
+        "title": "RoutePlanResponse"
+      },
+      "StopInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "coordinates": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Coordinates",
+            "description": "[longitude, latitude] GeoJSON coordinate pair"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "'completed' | 'next' | 'pending'"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "coordinates",
+          "status"
+        ],
+        "title": "StopInfo"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

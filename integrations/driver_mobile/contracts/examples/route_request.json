@@ -1,0 +1,18 @@
+{
+  "request": {
+    "request_id": "client-req-5541-11aa",
+    "base_route_version": 1
+  },
+  "response": {
+    "job_id": "job_plan_ab066ae54a25f81c",
+    "status": "completed",
+    "outcome": "KEEP",
+    "result": {
+      "decision": "KEEP",
+      "published": false,
+      "reason": "Current route optimal",
+      "route_version": 1,
+      "current_cost_seconds": 1200.0
+    }
+  }
+}

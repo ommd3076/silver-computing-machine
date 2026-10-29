@@ -1,0 +1,34 @@
+{
+  "drivers": [
+    {
+      "driver_id": "driver_1",
+      "driver_name": "Ramesh Kumar",
+      "vehicle_id": "vehicle_1",
+      "status": "en_route",
+      "route_version": 2,
+      "corridor": "corridor_b_bypass",
+      "last_ack_version": 2,
+      "active_delay_seconds": 480.0
+    },
+    {
+      "driver_id": "driver_2",
+      "driver_name": "Suresh Sharma",
+      "vehicle_id": "vehicle_2",
+      "status": "en_route",
+      "route_version": 1,
+      "corridor": "corridor_c_south",
+      "last_ack_version": 1,
+      "active_delay_seconds": 0.0
+    }
+  ],
+  "active_incidents": [
+    {
+      "event_id": "client-uuid-9821-43ef",
+      "driver_id": "driver_1",
+      "segment_id": "seg_nh48_exp",
+      "severity": "heavy",
+      "delay_seconds": 480.0,
+      "reported_at": "2026-10-30T01:22:00.000000Z"
+    }
+  ]
+}

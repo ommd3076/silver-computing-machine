@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "driver_id": "driver_1",
+  "vehicle_id": "vehicle_1",
+  "route_id": "route_v1_primary",
+  "corridor_id": "corridor_a_expressway",
+  "route_version": 1,
+  "manifest_revision": 1,
+  "status": "en_route",
+  "estimated_duration_seconds": 1200.0,
+  "estimated_distance_metres": 12700.0,
+  "active_overlays": {},
+  "simulation_mode": true,
+  "data_provenance": "synthetic_delhivery_v1",
+  "geojson": {
+    "type": "Feature",
+    "geometry": {
+      "type": "LineString",
+      "coordinates": [
+        [77.1025, 28.5245],
+        [77.088, 28.512],
+        [77.065, 28.498],
+        [77.042, 28.486],
+        [77.031, 28.479],
+        [77.031, 28.479],
+        [77.025, 28.485],
+        [77.038, 28.502],
+        [77.1025, 28.5245]
+      ]
+    },
+    "properties": {
+      "route_id": "route_v1_primary",
+      "corridor_id": "corridor_a_expressway",
+      "name": "Expressway Route (Fastest Base)",
+      "vehicle_id": "vehicle_1",
+      "stop_ids": ["depot", "stop_1", "stop_2", "depot"],
+      "duration_seconds": 1200.0,
+      "distance_metres": 12700.0
+    }
+  },
+  "stops": [
+    {
+      "id": "depot",
+      "name": "Okhla Hub Depot",
+      "coordinates": [77.1025, 28.5245],
+      "status": "completed"
+    },
+    {
+      "id": "stop_1",
+      "name": "Cyber Hub, Gurgaon",
+      "coordinates": [77.031, 28.479],
+      "status": "next"
+    },
+    {
+      "id": "stop_2",
+      "name": "Udyog Vihar Phase IV",
+      "coordinates": [77.025, 28.485],
+      "status": "pending"
+    },
+    {
+      "id": "depot",
+      "name": "Okhla Hub Depot",
+      "coordinates": [77.1025, 28.5245],
+      "status": "pending"
+    }
+  ],
+  "last_ack_version": 1,
+  "updated_at": "2026-10-30T01:21:54.000000Z"
+}

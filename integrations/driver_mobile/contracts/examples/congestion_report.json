@@ -1,0 +1,19 @@
+{
+  "request": {
+    "event_id": "client-uuid-9821-43ef",
+    "base_route_version": 1,
+    "kind": "congestion",
+    "severity": "heavy",
+    "note": "Traffic gridlock at Mahipalpur flyover"
+  },
+  "response": {
+    "status": "accepted",
+    "event_id": "client-uuid-9821-43ef",
+    "job_id": "job_cong_be30136811b94445",
+    "delay_applied_seconds": 480.0,
+    "segment_id": "seg_nh48_exp",
+    "decision": "PUBLISHED_NEW_ROUTE",
+    "published_new_route": true,
+    "current_route_version": 2
+  }
+}
