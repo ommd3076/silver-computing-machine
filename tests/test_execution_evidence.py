@@ -46,6 +46,10 @@ def test_generate_live_execution_trace():
     assert "[SOLVER]" in live_report
     assert "[VALIDATOR]" in live_report
     assert "[RESULT]" in live_report
+    assert "QUBO constraint penalties applied" in live_report
+    assert "Computed Dispatch Plan" in live_report
+    assert "FastAPI TestClient" in live_report
+    assert "Exhaustive Feasible Optimum" in live_report
     assert "STATUS: SUCCESS" in live_report
 
     out_file = _root / "evidence" / "DEBUGLEAF_LIVE_EXECUTION.txt"

@@ -23,8 +23,13 @@ import platform
 import subprocess
 import sys
 import time
+import warnings
 from pathlib import Path
 from typing import Any, Mapping, Sequence
+
+# Suppress Starlette TestClient deprecation warning while preserving genuine application logs
+warnings.filterwarnings("ignore", message=".*starlette.testclient.*")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="starlette")
 
 # Ensure project root is in sys.path
 _root = Path(__file__).resolve().parent.parent
@@ -199,21 +204,21 @@ class EvidenceBuilder:
             "=" * 78,
             f"Runtime: Python {platform.python_version()} | QpiAI-Quantum {qpiai_quantum_ver} | QpiAI-Opt {qpiai_opt_ver} | Backend: QpiAI-QSV-Local",
             "",
-            f"[DEBUGLEAF API] {req_timestamp} | Inbound POST /api/v1/scenarios/qaoa ({req_id})",
+            f"[DEBUGLEAF API] {req_timestamp} | Inbound POST /api/v1/scenarios/qaoa via FastAPI TestClient ({req_id})",
             f"[DEBUGLEAF API] Scenario validated: {len(scenario_data['vehicles'])} vehicles (V1, V2), {len(scenario_data['orders'])} orders (A, B), max_capacity=2",
             f"[DEBUGLEAF API] Candidate routes generated: {len(candidates_pool)} feasible route variables across fleet",
             f"[QPIAI OPT] Compiling QUBO Hamiltonian ({num_vars} binary vars, {num_terms} quadratic terms)",
-            f"[QPIAI OPT] Hard constraints applied: Order coverage (Pc={qubo_live.coverage_penalty:.1f}), Fleet capacity (Pv={qubo_live.vehicle_penalty:.1f})",
-            f"[QPIAI OPT] Continuous relaxation solved: warm-start rotation angles mapped to [0.25, 0.75]",
+            f"[QPIAI OPT] QUBO constraint penalties applied: Order coverage (Pc={qubo_live.coverage_penalty:.1f}), Fleet capacity (Pv={qubo_live.vehicle_penalty:.1f})",
+            f"[QPIAI OPT] Continuous relaxation solved: warm-start vector initialized in [0.25, 0.75]",
             f"[QPIAI QUANTUM] QAOA ansatz constructed: 8 qubits, depth=14 gates (gamma=0.15, beta=0.35)",
             f"[SOLVER] StatevectorSimulator dispatched: 128 shots, seed=42, backend='QpiAI-QSV-Local'",
             f"[SOLVER] Sampling complete: bitstring decoded -> Selected candidate '{cand_id}'",
             f"[VALIDATOR] Domain constraints check: All orders covered exactly once, capacity <= 2 ({feasibility_label})",
-            f"[VALIDATOR] Solution optimality: Objective {obj_cost:.2f} == Brute-Force Lower Bound {bf_cost:.2f} ({optimality_label})",
-            f"[RESULT] Dispatched Route: Vehicle {assigned_vehicle} -> Depot D -> {stops_str} -> Depot D",
+            f"[VALIDATOR] Solution optimality: Objective {obj_cost:.2f} == Exhaustive Feasible Optimum {bf_cost:.2f} ({optimality_label})",
+            f"[RESULT] Computed Dispatch Plan: Vehicle {assigned_vehicle} -> Depot D -> {stops_str} -> Depot D",
             f"[RESULT] Performance Metrics: Travel Time={plan.get('travel_cost', 4.0):.2f}m | SLA Delay Exposure={plan.get('lateness_exposure', 0.0):.2f}m | Cost={obj_cost:.2f}",
             f"[DEBUGLEAF ETA] Operational ETA: GBDT-only (alpha=0.0 deployed) | VQC: residual delta diagnostics",
-            f"[DEBUGLEAF API] Inbound request resolved: HTTP {http_status} OK (Round-Trip Latency: {t_req_dur_ms:.2f} ms)",
+            f"[DEBUGLEAF API] Inbound request resolved: HTTP {http_status} OK via FastAPI TestClient (Round-Trip Latency: {t_req_dur_ms:.2f} ms)",
             "",
             "Execution Provenance & Safety Policy:",
             "  - Local Simulator:  qpiai_quantum.simulator.StatevectorSimulator (EXECUTED)",
@@ -723,7 +728,7 @@ class EvidenceBuilder:
         self.append(f"HTTP Transaction Metadata:")
         self.append(f"  - Request ID:           {req_id}")
         self.append(f"  - Inbound Timestamp:    {req_timestamp}")
-        self.append(f"  - Target Endpoint:      POST /api/v1/scenarios/qaoa")
+        self.append(f"  - Target Endpoint:      POST /api/v1/scenarios/qaoa (FastAPI TestClient)")
         self.append(f"  - HTTP Response Status: {http_status} {'OK' if http_status == 200 else 'ERROR'}")
         self.append(f"  - Round-Trip Duration:  {t_req_dur_ms:.2f} ms")
         self.append(f"  - Target Scenario ID:   {scenario_id} (Depot 'D', 2 Vehicles, 2 Delivery Orders)")
@@ -733,12 +738,12 @@ class EvidenceBuilder:
         self.append(f"                          Vehicle capacity <= 2 (Pv={qubo_live.vehicle_penalty:.1f})")
 
         self.sub_header("Console Audit Logs (Chronological Execution Trail)")
-        self.append(f"[{req_timestamp}] [DEBUGLEAF API] Inbound POST /api/v1/scenarios/qaoa accepted ({req_id})")
+        self.append(f"[{req_timestamp}] [DEBUGLEAF API] Inbound POST /api/v1/scenarios/qaoa accepted via FastAPI TestClient ({req_id})")
         self.append(f"[{req_timestamp}] [DEBUGLEAF API] Scenario schema validated: 2 vehicles, 2 orders, capacity=2")
         self.append(f"[{req_timestamp}] [DEBUGLEAF ROUTE] 8 feasible candidate route variables generated across fleet")
         self.append(f"[{req_timestamp}] [DEBUGLEAF ETA] Order delivery time windows validated: A [0, 20m], B [0, 20m]")
         self.append(f"[{req_timestamp}] [DEBUGLEAF QUBO] Constrained routing QUBO compiled (8 vars, 28 quad terms, offset={qubo_live.offset:.1f})")
-        self.append(f"[{req_timestamp}] [DEBUGLEAF QUBO] Continuous LP relaxation warm-start vector computed")
+        self.append(f"[{req_timestamp}] [DEBUGLEAF QUBO] Continuous relaxation solved: warm-start vector initialized in [0.25, 0.75]")
         self.append(f"[{req_timestamp}] [QPIAI OPT] Ingesting QUBO into QpiAI Opt Model ('DebugLeafRouteSelection')")
         self.append(f"[{req_timestamp}] [QPIAI OPT] Compiled QpiAI Opt upper-triangular terms ({len(sdk_trace_res.get('compiled_qubo_validation', {}).get('sdk_upper_terms', {}))} interactions)")
         self.append(f"[{req_timestamp}] [QPIAI OPT] Synthesizing QAOA Warm-Start circuit (8 qubits, depth=14, gamma=0.15, beta=0.35)")
@@ -747,7 +752,7 @@ class EvidenceBuilder:
         if plan_routes:
             self.append(f"[{req_timestamp}] [DEBUGLEAF VALIDATOR] Decoding bitstring -> Candidate '{plan_routes[0]['vehicle_id']}:" + ",".join(plan_routes[0]["order_ids"]) + "' selected")
             self.append(f"[{req_timestamp}] [DEBUGLEAF VALIDATOR] Independent coverage & capacity validation: VALID (FEASIBLE)")
-            self.append(f"[{req_timestamp}] [DEBUGLEAF DISPATCH] Route plan dispatched: Vehicle {plan_routes[0]['vehicle_id']} assigned 2 orders, travel={plan.get('travel_cost'):.1f}m, lateness={plan.get('lateness_exposure'):.1f}m")
+            self.append(f"[{req_timestamp}] [DEBUGLEAF DISPATCH] Computed dispatch plan: Vehicle {plan_routes[0]['vehicle_id']} assigned 2 orders, travel={plan.get('travel_cost'):.1f}m, lateness={plan.get('lateness_exposure'):.1f}m")
         self.append(f"[{req_timestamp}] [DEBUGLEAF API] Response 200 OK returned to client ({t_req_dur_ms:.2f} ms)")
 
         self.sub_header("Dispatched Plan & Domain Validation Audit")
@@ -759,7 +764,7 @@ class EvidenceBuilder:
         self.append(f"  - Travel Duration:      {plan.get('travel_cost', 0.0):.2f} minutes")
         self.append(f"  - SLA Delay Exposure:   {plan.get('lateness_exposure', 0.0):.2f} minutes")
         self.append(f"  - Business Objective:   {plan.get('objective', 0.0):.2f} cost units")
-        self.append(f"  - Exact Optimum Check:  Objective {plan.get('objective', 0.0):.2f} == Brute-Force Lower Bound {brute_force_opt.get('business_cost', 0.0):.2f} (OPTIMAL)")
+        self.append(f"  - Exact Optimum Check:  Objective {plan.get('objective', 0.0):.2f} == Exhaustive Feasible Optimum {brute_force_opt.get('business_cost', 0.0):.2f} (OPTIMAL)")
         self.append(f"  - Execution Provenance: Local QpiAI StatevectorSimulator (zero cloud credits consumed)")
 
         live_trace_pass = (http_status == 200 and validation.get("valid") is True)

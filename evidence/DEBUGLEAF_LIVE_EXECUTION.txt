@@ -3,21 +3,21 @@
 ==============================================================================
 Runtime: Python 3.12.10 | QpiAI-Quantum 0.3.0 | QpiAI-Opt 0.0.9 | Backend: QpiAI-QSV-Local
 
-[DEBUGLEAF API] 2026-10-29T21:46:02.088Z | Inbound POST /api/v1/scenarios/qaoa (req_51eeeedc0105)
+[DEBUGLEAF API] 2026-10-29T22:00:24.853Z | Inbound POST /api/v1/scenarios/qaoa via FastAPI TestClient (req_1946d3dbafb5)
 [DEBUGLEAF API] Scenario validated: 2 vehicles (V1, V2), 2 orders (A, B), max_capacity=2
 [DEBUGLEAF API] Candidate routes generated: 8 feasible route variables across fleet
 [QPIAI OPT] Compiling QUBO Hamiltonian (8 binary vars, 34 quadratic terms)
-[QPIAI OPT] Hard constraints applied: Order coverage (Pc=29.0), Fleet capacity (Pv=29.0)
-[QPIAI OPT] Continuous relaxation solved: warm-start rotation angles mapped to [0.25, 0.75]
+[QPIAI OPT] QUBO constraint penalties applied: Order coverage (Pc=29.0), Fleet capacity (Pv=29.0)
+[QPIAI OPT] Continuous relaxation solved: warm-start vector initialized in [0.25, 0.75]
 [QPIAI QUANTUM] QAOA ansatz constructed: 8 qubits, depth=14 gates (gamma=0.15, beta=0.35)
 [SOLVER] StatevectorSimulator dispatched: 128 shots, seed=42, backend='QpiAI-QSV-Local'
 [SOLVER] Sampling complete: bitstring decoded -> Selected candidate 'V2:B,A'
 [VALIDATOR] Domain constraints check: All orders covered exactly once, capacity <= 2 (FEASIBLE)
-[VALIDATOR] Solution optimality: Objective 4.00 == Brute-Force Lower Bound 4.00 (GLOBAL OPTIMUM VERIFIED)
-[RESULT] Dispatched Route: Vehicle V2 -> Depot D -> Stop B (arr 2m) -> Stop A (arr 4m) -> Depot D
+[VALIDATOR] Solution optimality: Objective 4.00 == Exhaustive Feasible Optimum 4.00 (GLOBAL OPTIMUM VERIFIED)
+[RESULT] Computed Dispatch Plan: Vehicle V2 -> Depot D -> Stop B (arr 2m) -> Stop A (arr 4m) -> Depot D
 [RESULT] Performance Metrics: Travel Time=4.00m | SLA Delay Exposure=0.00m | Cost=4.00
 [DEBUGLEAF ETA] Operational ETA: GBDT-only (alpha=0.0 deployed) | VQC: residual delta diagnostics
-[DEBUGLEAF API] Inbound request resolved: HTTP 200 OK (Round-Trip Latency: 180.03 ms)
+[DEBUGLEAF API] Inbound request resolved: HTTP 200 OK via FastAPI TestClient (Round-Trip Latency: 187.36 ms)
 
 Execution Provenance & Safety Policy:
   - Local Simulator:  qpiai_quantum.simulator.StatevectorSimulator (EXECUTED)
