@@ -19,6 +19,7 @@ if not _target_py.exists():
 args = sys.argv[1:] if len(sys.argv) > 1 else [
     "tests/test_execution_evidence.py",
     "tests/test_isolated_qml.py",
+    "tests/test_ui.py",
     "-v",
 ]
 

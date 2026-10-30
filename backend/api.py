@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 # pyrefly: ignore[missing-import]
 from fastapi import Body, FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.exceptions import RequestValidationError
 from math import isfinite
 
@@ -147,6 +147,15 @@ def create_app(job_manager: JobManager | None = None, *, auth_config: AuthConfig
     def capacity_error() -> JSONResponse:
         return JSONResponse(status_code=429, content={"error": {
             "code": "capacity_reached", "message": "local compute capacity reached"}})
+
+    @app.get("/", response_class=HTMLResponse)
+    @app.get("/ui", response_class=HTMLResponse)
+    def ui_index() -> HTMLResponse:
+        from pathlib import Path
+        ui_file = Path(__file__).resolve().parent / "static" / "index.html"
+        if ui_file.is_file():
+            return HTMLResponse(content=ui_file.read_text(encoding="utf-8"))
+        return HTMLResponse("<h1>DebugLeaf Platform</h1><p>UI file not found.</p>")
 
     @app.get("/api/v1/health")
     def health() -> dict[str, str]:

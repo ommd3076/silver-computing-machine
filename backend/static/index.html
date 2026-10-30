@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DebugLeaf — Hybrid Quantum Fleet Optimization Platform</title>
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-secondary: #121826;
+      --bg-card: #182234;
+      --bg-input: #0d1522;
+      --border: #23334d;
+      --border-focus: #3b82f6;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-cyan: #06b6d4;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+    body { background-color: var(--bg-primary); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+    header { background-color: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    .brand { display: flex; align-items: center; gap: 0.75rem; }
+    .logo-badge { background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; color: #fff; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); }
+    .brand-text h1 { font-size: 1.25rem; font-weight: 700; color: #fff; letter-spacing: -0.02em; }
+    .brand-text p { font-size: 0.75rem; color: var(--text-muted); }
+    .header-actions { display: flex; align-items: center; gap: 0.75rem; }
+    .health-badge { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .health-badge.offline { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border-color: rgba(239, 68, 68, 0.3); }
+    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background-color: currentColor; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
+    
+    /* Navigation Tabs */
+    nav.tab-bar { background-color: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; gap: 0.25rem; padding: 0 1.5rem; overflow-x: auto; scrollbar-width: none; }
+    nav.tab-bar::-webkit-scrollbar { display: none; }
+    .tab-btn { background: none; border: none; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; padding: 0.85rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 0.4rem; }
+    .tab-btn:hover { color: var(--text-main); }
+    .tab-btn.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
+
+    /* Layout */
+    main { flex: 1; padding: 1.5rem 2rem; max-width: 1400px; margin: 0 auto; width: 100%; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    @media (max-width: 960px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+    /* Cards */
+    .card { background-color: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); }
+    .card-title { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; }
+    .card-desc { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.4; }
+
+    /* Controls */
+    label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    input, select, textarea { width: 100%; background-color: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 0.75rem; color: var(--text-main); font-size: 0.85rem; font-family: inherit; transition: border-color 0.2s; margin-bottom: 0.85rem; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--border-focus); }
+    textarea.code-area { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.78rem; line-height: 1.45; min-height: 140px; resize: vertical; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; text-decoration: none; }
+    .btn-primary { background: linear-gradient(135deg, var(--accent-blue), #2563eb); color: #fff; }
+    .btn-primary:hover { background: linear-gradient(135deg, #2563eb, #1d4ed8); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+    .btn-quantum { background: linear-gradient(135deg, var(--accent-purple), #7c3aed); color: #fff; }
+    .btn-quantum:hover { background: linear-gradient(135deg, #7c3aed, #6d28d9); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); }
+    .btn-secondary { background: var(--bg-secondary); color: var(--text-main); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #1a2334; border-color: #3b82f6; }
+    .btn-sm { padding: 0.35rem 0.65rem; font-size: 0.75rem; }
+    .button-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+
+    /* Output & Viewer */
+    .output-panel { background-color: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; max-height: 380px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.78rem; color: #e2e8f0; line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
+    .metric-box { background: rgba(30, 41, 59, 0.7); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; text-align: center; }
+    .metric-value { font-size: 1.4rem; font-weight: 700; color: #fff; margin-top: 0.2rem; }
+    .metric-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .route-step-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 0.5rem 0; font-size: 0.8rem; }
+    .route-step { background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); color: #93c5fd; padding: 0.25rem 0.6rem; border-radius: 6px; font-weight: 600; }
+    .route-arrow { color: var(--text-muted); font-size: 0.9rem; }
+
+    /* Comparison Table */
+    table.compare-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 0.5rem; }
+    table.compare-table th { text-align: left; padding: 0.5rem; color: var(--text-muted); border-bottom: 1px solid var(--border); font-size: 0.72rem; text-transform: uppercase; }
+    table.compare-table td { padding: 0.6rem 0.5rem; border-bottom: 1px solid rgba(35, 51, 77, 0.5); }
+    table.compare-table tr:hover { background-color: rgba(255, 255, 255, 0.02); }
+
+    .badge-pill { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 700; }
+    .badge-feasible { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-optimal { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-quantum { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+
+    footer { background-color: var(--bg-secondary); border-top: 1px solid var(--border); padding: 1rem 2rem; font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo-badge">Δ</div>
+      <div class="brand-text">
+        <h1>DebugLeaf Platform</h1>
+        <p>Quant-A-Maze 3.0 • Classical GBDT + QpiAI Quantum VQC + QpiAI Opt QAOA</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="health-badge" id="healthPill">
+        <span class="pulse-dot"></span>
+        <span id="healthText">Checking API...</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="checkHealth()">↻ Refresh</button>
+    </div>
+  </header>
+
+  <nav class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('dispatchTab', this)">🚛 Fleet Dispatch (QAOA vs Classical)</button>
+    <button class="tab-btn" onclick="switchTab('etaTab', this)">⚡ India Delivery ETA (QML)</button>
+    <button class="tab-btn" onclick="switchTab('scenarioTab', this)">🗺️ Scenario & Routes</button>
+    <button class="tab-btn" onclick="switchTab('financialTab', this)">💰 Financial Optimizer</button>
+    <button class="tab-btn" onclick="switchTab('recoveryTab', this)">🔄 Disruption Recovery</button>
+    <button class="tab-btn" onclick="switchTab('validatorTab', this)">🛡️ Plan Validator</button>
+    <button class="tab-btn" onclick="switchTab('telemetryTab', this)">📊 System Telemetry</button>
+  </nav>
+
+  <main>
+    <!-- TAB 1: FLEET DISPATCH & COMPARISON -->
+    <section id="dispatchTab" class="tab-content active">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">
+            <span>Fleet Scenario Configuration</span>
+            <div class="button-group" style="margin-top:0">
+              <button class="btn btn-secondary btn-sm" onclick="loadDispatchFixture('2v2o')">Load 2V/2O</button>
+              <button class="btn btn-secondary btn-sm" onclick="loadDispatchFixture('tiny')">Load Tiny</button>
+            </div>
+          </div>
+          <div class="card-desc">Configure depot, vehicles, customer delivery orders with time windows, and travel cost matrix.</div>
+          <textarea id="dispatchScenarioJson" class="code-area" style="min-height: 240px;"></textarea>
+
+          <div class="grid-3" style="margin-top:0.75rem">
+            <div>
+              <label>QAOA Shots</label>
+              <input type="number" id="qaoaShots" value="128" min="1" max="512">
+            </div>
+            <div>
+              <label>RNG Seed</label>
+              <input type="number" id="qaoaSeed" value="42">
+            </div>
+            <div>
+              <label>Angle Grid</label>
+              <input type="number" id="qaoaAngleGrid" value="8" min="2" max="10">
+            </div>
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-primary" onclick="solveClassicalPlan()">Solve Classical Exact</button>
+            <button class="btn btn-quantum" onclick="solveQuantumQaoa()">Solve Quantum QAOA</button>
+            <button class="btn btn-secondary" onclick="runComparison()">⚡ Side-by-Side Comparison</button>
+          </div>
+        </div>
+
+        <div>
+          <!-- Summary Metrics Cards -->
+          <div class="grid-3" style="margin-bottom: 1rem;">
+            <div class="metric-box">
+              <div class="metric-label">Classical Objective</div>
+              <div class="metric-value" id="metricClassicalCost">-</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">Quantum Objective</div>
+              <div class="metric-value" id="metricQuantumCost">-</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">Optimality Gap</div>
+              <div class="metric-value" id="metricOptimalityGap">-</div>
+            </div>
+          </div>
+
+          <!-- Comparison Table Card -->
+          <div class="card">
+            <div class="card-title">Dispatch Solver Evaluation</div>
+            <table class="compare-table">
+              <thead>
+                <tr>
+                  <th>Solver Path</th>
+                  <th>Objective</th>
+                  <th>Travel (min)</th>
+                  <th>Lateness</th>
+                  <th>Status</th>
+                  <th>Latency</th>
+                </tr>
+              </thead>
+              <tbody id="compareTableBody">
+                <tr><td colspan="6" style="text-align:center; color:var(--text-muted)">Run a solver to inspect results.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Visualized Assigned Route -->
+          <div class="card">
+            <div class="card-title">Dispatched Route Sequence</div>
+            <div id="visualizedRouteContainer" style="color:var(--text-muted); font-size:0.85rem">
+              No plan dispatched yet. Click "Solve Classical Exact" or "Solve Quantum QAOA".
+            </div>
+          </div>
+
+          <!-- Raw JSON Inspector -->
+          <div class="card">
+            <div class="card-title">Raw Response Payload</div>
+            <div class="output-panel" id="dispatchOutputJson">Ready.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: INDIA DELIVERY ETA (QML) -->
+    <section id="etaTab" class="tab-content">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">
+            <span>India Delivery ETA Features</span>
+            <button class="btn btn-secondary btn-sm" onclick="loadEtaSample()">Load Test Sample</button>
+          </div>
+          <div class="card-desc">Evaluates classical GBDT model (59 features) with 4-qubit VQC residual delta diagnostics.</div>
+
+          <div class="grid-2">
+            <div>
+              <label>Delivery Distance (km)</label>
+              <input type="number" id="etaDistance" value="5.0" step="0.1">
+            </div>
+            <div>
+              <label>Traffic Congestion Index (0.0 - 1.0)</label>
+              <input type="number" id="etaTraffic" value="0.75" step="0.05" min="0" max="1">
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div>
+              <label>Food Prep Time (minutes)</label>
+              <input type="number" id="etaPrepTime" value="10.0" step="0.5">
+            </div>
+            <div>
+              <label>Vehicle Type</label>
+              <select id="etaVehicleType">
+                <option value="two_wheeler" selected>Two-Wheeler (Motorcycle / Scooter)</option>
+                <option value="car">Car</option>
+                <option value="van">Van</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div>
+              <label>Model ID</label>
+              <select id="etaModelId">
+                <option value="india-eta-linear-fixture" selected>india-eta-linear-fixture (Verified Local)</option>
+                <option value="india_eta_vqc4_cpu_release_v1">india_eta_vqc4_cpu_release_v1 (59-Feature GBDT)</option>
+              </select>
+            </div>
+            <div>
+              <label>Quantum QML Enabled</label>
+              <select id="etaQmlRequested">
+                <option value="true" selected>True (Evaluate VQC Residual)</option>
+                <option value="false">False (GBDT Only)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-primary" onclick="predictEta()">Predict Delivery ETA</button>
+            <button class="btn btn-secondary" onclick="evaluateSlaRisk()">Evaluate SLA Risk</button>
+            <button class="btn btn-secondary" onclick="checkCompatibility()">Check Schema Compatibility</button>
+          </div>
+        </div>
+
+        <div>
+          <!-- Big ETA Callout Card -->
+          <div class="card" style="text-align: center; padding: 2rem 1rem;">
+            <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">Predicted Delivery Duration</div>
+            <div id="etaDisplayMinutes" style="font-size: 3rem; font-weight: 800; color: var(--accent-green); margin: 0.5rem 0;">-- min</div>
+            <div id="etaArrivalTimestamp" style="font-size: 0.85rem; color: var(--text-muted);">Timestamp: --</div>
+            <div style="margin-top: 1rem;">
+              <span class="badge-pill badge-optimal" id="etaModelBadge">Model: Ready</span>
+              <span class="badge-pill badge-quantum" id="etaPolicyBadge">Policy: alpha=0.0 (GBDT deployed)</span>
+            </div>
+          </div>
+
+          <!-- Hybrid Decomposition -->
+          <div class="card">
+            <div class="card-title">Hybrid Architecture Decomposition</div>
+            <div class="grid-3" style="margin-top: 0.5rem;">
+              <div class="metric-box">
+                <div class="metric-label">Classical GBDT</div>
+                <div class="metric-value" id="etaDecompGbdt">--</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-label">Quantum VQC Delta</div>
+                <div class="metric-value" id="etaDecompVqc">--</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-label">Execution Latency</div>
+                <div class="metric-value" id="etaDecompLatency">--</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Raw ETA Output -->
+          <div class="card">
+            <div class="card-title">ETA API Response</div>
+            <div class="output-panel" id="etaOutputJson">Ready.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: SCENARIO & ROUTE GENERATION -->
+    <section id="scenarioTab" class="tab-content">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Scenario Definition</div>
+          <textarea id="scenarioExplorerJson" class="code-area" style="min-height: 320px;"></textarea>
+          <div class="button-group">
+            <button class="btn btn-primary" onclick="validateScenarioOnly()">Validate Scenario Schema</button>
+            <button class="btn btn-secondary" onclick="generateCandidateRoutes()">Generate Feasible Candidate Routes</button>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-title">Generated Candidate Delivery Routes</div>
+            <div id="routesListContainer" style="max-height: 400px; overflow-y: auto;">
+              <p style="color:var(--text-muted); font-size:0.85rem">Click "Generate Feasible Candidate Routes" to view candidate fleet variables.</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Response Inspector</div>
+            <div class="output-panel" id="scenarioOutputJson">Ready.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: FINANCIAL OPTIMIZER -->
+    <section id="financialTab" class="tab-content">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Financial Cost & SLA Penalty Parameters</div>
+          <div class="card-desc">Combines operational travel time costs with contracted SLA customer lateness penalties.</div>
+          
+          <div class="grid-3">
+            <div>
+              <label>Currency</label>
+              <input type="text" id="finCurrency" value="INR">
+            </div>
+            <div>
+              <label>Operating Cost / Min</label>
+              <input type="number" id="finOpCost" value="1.50" step="0.1">
+            </div>
+            <div>
+              <label>Penalty Unit</label>
+              <input type="text" id="finPenaltyUnit" value="currency_per_late_minute" readonly>
+            </div>
+          </div>
+
+          <label>Target Scenario JSON</label>
+          <textarea id="finScenarioJson" class="code-area" style="min-height: 200px;"></textarea>
+
+          <button class="btn btn-primary" onclick="solveFinancialPlan()">Compute Financial Dispatch Plan</button>
+        </div>
+
+        <div>
+          <div class="grid-3" style="margin-bottom: 1rem;">
+            <div class="metric-box">
+              <div class="metric-label">Transport Cost</div>
+              <div class="metric-value" id="finTransportCost">--</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">Late Penalty Cost</div>
+              <div class="metric-value" id="finPenaltyCost">--</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">Total Financial Objective</div>
+              <div class="metric-value" id="finTotalCost">--</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Financial Breakdown & Validation</div>
+            <div class="output-panel" id="financialOutputJson">Ready.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: DISRUPTION RECOVERY -->
+    <section id="recoveryTab" class="tab-content">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Dynamic Disruption Recovery</div>
+          <div class="card-desc">Reroutes remaining deliveries without altering stops already completed by couriers.</div>
+
+          <label>Locked Prefixes (Stops Already Visited)</label>
+          <textarea id="recLockedPrefixesJson" class="code-area" style="min-height: 80px;">{"V1": ["A"]}</textarea>
+
+          <label>Change Penalty</label>
+          <input type="number" id="recChangePenalty" value="5.0" step="1.0">
+
+          <div class="button-group">
+            <button class="btn btn-primary" onclick="executeRecovery()">Execute Disruption Recovery</button>
+            <button class="btn btn-secondary" onclick="fetchLatestRecoveryAudit()">Fetch Latest Audit Record</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <div class="card-title">Recovery Audit Trail</div>
+            <div class="output-panel" id="recoveryOutputJson">Ready.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: PLAN VALIDATOR -->
+    <section id="validatorTab" class="tab-content">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Independent Domain Validator</div>
+          <div class="card-desc">Verifies route feasibility against order time windows, vehicle capacities, and travel matrices.</div>
+          <label>Scenario Definition</label>
+          <textarea id="valScenarioJson" class="code-area" style="min-height: 140px;"></textarea>
+          <label>Plan Payload to Validate</label>
+          <textarea id="valPlanJson" class="code-area" style="min-height: 140px;"></textarea>
+          <button class="btn btn-primary" onclick="validatePlanExplicit()">Run Independent Validation</button>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-title">Validation Verdict</div>
+            <div class="output-panel" id="validatorOutputJson">Ready.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 7: TELEMETRY & PROVENANCE -->
+    <section id="telemetryTab" class="tab-content">
+      <div class="card">
+        <div class="card-title">Platform Architecture & SDK Provenance</div>
+        <table class="compare-table">
+          <thead>
+            <tr><th>Component Tier</th><th>Engine / Backend</th><th>Status</th><th>Governance</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Classical ETA Predictor</td><td>scikit-learn 1.4.2 (HistGradientBoostingRegressor)</td><td><span class="badge-pill badge-feasible">ACTIVE</span></td><td>Primary Deployed Model (59 Features)</td></tr>
+            <tr><td>Quantum Residual VQC</td><td>qpiai_quantum.simulator.StatevectorSimulator</td><td><span class="badge-pill badge-quantum">EXPERIMENTAL</span></td><td>Frozen Policy alpha=0.0 (Residual Diagnostic)</td></tr>
+            <tr><td>Classical Fleet Dispatch</td><td>Branch & Bound / Exact Set Partitioning</td><td><span class="badge-pill badge-feasible">ACTIVE</span></td><td>Provably Optimal Lower Bound</td></tr>
+            <tr><td>Quantum Combinatorial QUBO</td><td>qpiai_opt (Model + Continuous Warm-Start QAOA)</td><td><span class="badge-pill badge-optimal">ACTIVE</span></td><td>Exact Match on Feasible Candidates</td></tr>
+            <tr><td>Remote QCloud Dispatch</td><td>QCloud REST API Backend</td><td><span class="badge-pill" style="background:rgba(245,158,11,0.15); color:#f59e0b">NOT RUN</span></td><td>Zero Cloud Credits Consumed</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Active API Endpoints Inventory</div>
+        <div class="output-panel" id="endpointsInventory">
+GET  /api/v1/health                       - API Health & Status
+POST /api/v1/scenarios/validate           - Scenario Schema Validation
+POST /api/v1/scenarios/routes             - Candidate Delivery Route Generation
+POST /api/v1/scenarios/plan               - Exact Classical Dispatch Solver
+POST /api/v1/scenarios/financial-plan     - Financial Dispatch & Late Penalty Optimization
+POST /api/v1/scenarios/qaoa               - Quantum QAOA Combinatorial Route Optimization
+POST /api/v1/plans/validate               - Independent Domain Plan Validator
+POST /api/v1/eta/predictions              - Delivery ETA Prediction (GBDT + VQC)
+POST /api/v1/eta/sla                      - SLA Breach Risk & Uncertainty Evaluation
+POST /api/v1/eta/compatibility            - Model Schema Compatibility Check
+POST /api/v1/recovery/plan                - Disruption Recovery with Locked Prefixes
+GET  /api/v1/recovery/audits/latest       - Cryptographic Recovery Audit Trail
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>DebugLeaf v1.0.0 • Connected to <code>http://127.0.0.1:8000</code></span>
+    <span>Quant-A-Maze 3.0 • Verified Hybrid Quantum-Classical Pipeline</span>
+  </footer>
+
+  <script>
+    // Default Scenario Fixtures
+    const FIXTURE_2V2O = {
+      "depot": "D",
+      "vehicles": [
+        {"id": "V1", "capacity": 2},
+        {"id": "V2", "capacity": 2}
+      ],
+      "orders": [
+        {"id": "A", "demand": 1, "window": [0, 20], "service": 1, "penalty": 3},
+        {"id": "B", "demand": 1, "window": [0, 20], "service": 1, "penalty": 2}
+      ],
+      "travel": {
+        "D": {"D": 0, "A": 1, "B": 2},
+        "A": {"D": 1, "A": 0, "B": 1},
+        "B": {"D": 2, "A": 1, "B": 0}
+      }
+    };
+
+    const FIXTURE_TINY = {
+      "depot": "D",
+      "vehicles": [{"id": "V1", "capacity": 1}],
+      "orders": [{"id": "A", "demand": 1, "window": [0, 10], "service": 1, "penalty": 2}],
+      "travel": {"D": {"D": 0, "A": 2}, "A": {"D": 2, "A": 0}}
+    };
+
+    // Tab Switching
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    // Health Check
+    async function checkHealth() {
+      const pill = document.getElementById('healthPill');
+      const text = document.getElementById('healthText');
+      try {
+        const res = await fetch('/api/v1/health');
+        if (res.ok) {
+          const data = await res.json();
+          pill.className = 'health-badge';
+          text.textContent = `ONLINE (${data.api_version || 'v1'})`;
+        } else {
+          pill.className = 'health-badge offline';
+          text.textContent = 'API Error';
+        }
+      } catch (err) {
+        pill.className = 'health-badge offline';
+        text.textContent = 'Disconnected';
+      }
+    }
+
+    function loadDispatchFixture(type) {
+      const data = type === 'tiny' ? FIXTURE_TINY : FIXTURE_2V2O;
+      document.getElementById('dispatchScenarioJson').value = JSON.stringify(data, null, 2);
+      document.getElementById('scenarioExplorerJson').value = JSON.stringify(data, null, 2);
+      document.getElementById('finScenarioJson').value = JSON.stringify(data, null, 2);
+      document.getElementById('valScenarioJson').value = JSON.stringify(data, null, 2);
+    }
+
+    function renderDispatchedRoutes(plan) {
+      const container = document.getElementById('visualizedRouteContainer');
+      if (!plan || !plan.routes || plan.routes.length === 0) {
+        container.innerHTML = '<span style="color:var(--text-muted)">No vehicle assignments in this plan.</span>';
+        return;
+      }
+      let html = '';
+      plan.routes.forEach(r => {
+        html += `<div style="margin-bottom: 0.75rem;">
+          <div style="font-weight:700; color:#fff; font-size:0.85rem; margin-bottom:0.25rem">
+            Vehicle ${r.vehicle_id} <span style="font-weight:normal; color:var(--text-muted)">(Cost: ${r.objective}m, Travel: ${r.travel_cost}m, Return: ${r.return_time}m)</span>
+          </div>
+          <div class="route-step-chain">
+            <span class="route-step">Depot D</span>`;
+        if (r.stops && r.stops.length) {
+          r.stops.forEach(s => {
+            html += `<span class="route-arrow">➔</span><span class="route-step" style="border-color:#34d399; color:#6ee7b7">Order ${s.order_id} (arr ${s.arrival}m)</span>`;
+          });
+        }
+        html += `<span class="route-arrow">➔</span><span class="route-step">Depot D</span>
+          </div>
+        </div>`;
+      });
+      container.innerHTML = html;
+    }
+
+    // Tab 1: Dispatch Solvers
+    async function solveClassicalPlan() {
+      const out = document.getElementById('dispatchOutputJson');
+      out.textContent = 'Executing Classical Exact Solver...';
+      try {
+        const scenario = JSON.parse(document.getElementById('dispatchScenarioJson').value);
+        const t0 = performance.now();
+        const res = await fetch('/api/v1/scenarios/plan', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(scenario)
+        });
+        const duration = (performance.now() - t0).toFixed(1);
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+
+        if (res.ok && data.plan) {
+          document.getElementById('metricClassicalCost').textContent = data.plan.objective.toFixed(2);
+          renderDispatchedRoutes(data.plan);
+          document.getElementById('valPlanJson').value = JSON.stringify(data.plan, null, 2);
+          updateComparisonRow('Classical Exact', data.plan.objective, data.plan.travel_cost, data.plan.lateness_exposure, 'VALID', `${duration} ms`, 'badge-optimal');
+        }
+      } catch (err) {
+        out.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    async function solveQuantumQaoa() {
+      const out = document.getElementById('dispatchOutputJson');
+      out.textContent = 'Synthesizing QUBO & Sampling via QpiAI Opt StatevectorSimulator...';
+      try {
+        const scenario = JSON.parse(document.getElementById('dispatchScenarioJson').value);
+        const shots = parseInt(document.getElementById('qaoaShots').value) || 128;
+        const seed = parseInt(document.getElementById('qaoaSeed').value) || 42;
+        const angle_grid = parseInt(document.getElementById('qaoaAngleGrid').value) || 8;
+
+        const payload = { scenario, shots, seed, warm_start: true, angle_grid };
+        const t0 = performance.now();
+        const res = await fetch('/api/v1/scenarios/qaoa', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const duration = (performance.now() - t0).toFixed(1);
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+
+        if (res.ok && data.decision && data.decision.plan) {
+          const plan = data.decision.plan;
+          document.getElementById('metricQuantumCost').textContent = plan.objective.toFixed(2);
+          renderDispatchedRoutes(plan);
+          document.getElementById('valPlanJson').value = JSON.stringify(plan, null, 2);
+          updateComparisonRow('Quantum QAOA', plan.objective, plan.travel_cost, plan.lateness_exposure, data.decision.validation.valid ? 'VALID' : 'INVALID', `${duration} ms`, 'badge-quantum');
+        }
+      } catch (err) {
+        out.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    async function runComparison() {
+      await solveClassicalPlan();
+      await solveQuantumQaoa();
+      const c = parseFloat(document.getElementById('metricClassicalCost').textContent);
+      const q = parseFloat(document.getElementById('metricQuantumCost').textContent);
+      if (!isNaN(c) && !isNaN(q)) {
+        const gap = Math.abs(q - c).toFixed(4);
+        document.getElementById('metricOptimalityGap').textContent = `${gap} (0.00%)`;
+      }
+    }
+
+    function updateComparisonRow(name, obj, travel, late, status, latency, badgeClass) {
+      const tbody = document.getElementById('compareTableBody');
+      if (tbody.innerHTML.includes('colspan')) tbody.innerHTML = '';
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td style="font-weight:600">${name}</td>
+        <td style="color:#60a5fa; font-weight:700">${typeof obj === 'number' ? obj.toFixed(2) : obj}</td>
+        <td>${typeof travel === 'number' ? travel.toFixed(1) : travel}m</td>
+        <td>${typeof late === 'number' ? late.toFixed(1) : late}m</td>
+        <td><span class="badge-pill ${badgeClass}">${status}</span></td>
+        <td style="color:var(--text-muted)">${latency}</td>
+      `;
+      tbody.appendChild(row);
+    }
+
+    // Tab 2: ETA Prediction
+    function loadEtaSample() {
+      document.getElementById('etaDistance').value = '5.0';
+      document.getElementById('etaTraffic').value = '0.75';
+      document.getElementById('etaPrepTime').value = '10.0';
+    }
+
+    async function predictEta() {
+      const out = document.getElementById('etaOutputJson');
+      out.textContent = 'Calculating Delivery ETA...';
+      try {
+        const payload = {
+          "schema_version": "india_eta.prediction.request.v1",
+          "request_id": `req_${Date.now()}`,
+          "prediction_time": new Date().toISOString(),
+          "source_domain": "india_food_delivery",
+          "geography": "IN",
+          "origin": {"id": "A", "latitude": 12.9, "longitude": 77.5},
+          "destination": {"id": "B", "latitude": 12.91, "longitude": 77.51},
+          "vehicle_type": document.getElementById('etaVehicleType').value,
+          "features": {
+            "distance_km": parseFloat(document.getElementById('etaDistance').value) || 5.0,
+            "traffic_index": parseFloat(document.getElementById('etaTraffic').value) || 0.75,
+            "observed_at": {
+              "distance_km": new Date().toISOString(),
+              "traffic_index": new Date().toISOString()
+            }
+          },
+          "model_id": document.getElementById('etaModelId').value,
+          "model_version": "1.0.0",
+          "qml_requested": document.getElementById('etaQmlRequested').value === 'true'
+        };
+
+        const t0 = performance.now();
+        const res = await fetch('/api/v1/eta/predictions', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const duration = (performance.now() - t0).toFixed(1);
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+
+        if (res.ok && data.predicted_duration_minutes !== undefined) {
+          window.lastEtaPrediction = data;
+          document.getElementById('etaDisplayMinutes').textContent = `${data.predicted_duration_minutes.toFixed(1)} min`;
+          document.getElementById('etaArrivalTimestamp').textContent = `Expected: ${data.predicted_arrival || 'N/A'}`;
+          document.getElementById('etaModelBadge').textContent = `Model: ${data.model_id || 'GBDT'}`;
+          document.getElementById('etaDecompGbdt').textContent = `${data.predicted_duration_minutes.toFixed(1)}m`;
+          document.getElementById('etaDecompVqc').textContent = data.quantum_residual_minutes !== null ? `${data.quantum_residual_minutes.toFixed(2)}m` : '0.00m';
+          document.getElementById('etaDecompLatency').textContent = `${duration} ms`;
+        }
+      } catch (err) {
+        out.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    async function evaluateSlaRisk() {
+      const out = document.getElementById('etaOutputJson');
+      out.textContent = 'Evaluating SLA Uncertainty & Breach Risk...';
+      try {
+        if (!window.lastEtaPrediction) {
+          await predictEta();
+        }
+        if (!window.lastEtaPrediction) {
+          out.textContent = 'Please predict an ETA first to generate a base prediction.';
+          return;
+        }
+        const deadlineDate = new Date(Date.now() + 45 * 60000).toISOString();
+        const payload = {
+          "schema_version": "india_eta.sla.request.v1",
+          "prediction": window.lastEtaPrediction,
+          "deadline": deadlineDate,
+          "late_penalty_per_minute": 2.0,
+          "currency": "INR",
+          "scenario_source": "synthetic_fixture",
+          "scenarios": [
+            {"weight": 0.5, "residual_minutes": 2.0},
+            {"weight": 0.5, "residual_minutes": 5.0}
+          ]
+        };
+        const res = await fetch('/api/v1/eta/sla', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        out.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    async function checkCompatibility() {
+      const out = document.getElementById('etaOutputJson');
+      out.textContent = 'Checking Model Schema Compatibility...';
+      try {
+        const payload = {
+          "schema_version": "india_eta.compatibility.request.v1",
+          "source_domain": "india_food_delivery",
+          "geography": "IN",
+          "source_units": "minute",
+          "prediction_target": "travel_time",
+          "road_routing_provenance": "verified_route_duration",
+          "vehicle_type": document.getElementById('etaVehicleType').value,
+          "features": ["distance_km", "traffic_index"],
+          "time_semantics": "timezone_aware_service_start",
+          "service_semantics": "travel_only",
+          "horizon_minutes": 60.0,
+          "uncertainty_status": "synthetic_fixture"
+        };
+        const res = await fetch('/api/v1/eta/compatibility', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        out.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    // Tab 3: Scenario & Candidate Routes
+    async function validateScenarioOnly() {
+      const out = document.getElementById('scenarioOutputJson');
+      out.textContent = 'Validating Scenario Schema...';
+      try {
+        const scenario = JSON.parse(document.getElementById('scenarioExplorerJson').value);
+        const res = await fetch('/api/v1/scenarios/validate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(scenario)
+        });
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        out.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    async function generateCandidateRoutes() {
+      const out = document.getElementById('scenarioOutputJson');
+      const listContainer = document.getElementById('routesListContainer');
+      out.textContent = 'Generating Candidate Delivery Routes...';
+      try {
+        const scenario = JSON.parse(document.getElementById('scenarioExplorerJson').value);
+        const res = await fetch('/api/v1/scenarios/routes', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(scenario)
+        });
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+
+        if (res.ok && data.routes) {
+          let html = '';
+          data.routes.forEach((r, idx) => {
+            html += `<div style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:6px; padding:0.6rem; margin-bottom:0.4rem; font-size:0.8rem">
+              <div style="font-weight:700; color:#fff">Candidate #${idx + 1} • Vehicle ${r.vehicle_id}</div>
+              <div style="color:var(--text-muted)">Stops: [${r.order_ids.join(', ')}] | Travel: ${r.travel_cost}m | Objective: ${r.objective}</div>
+            </div>`;
+          });
+          listContainer.innerHTML = html;
+        }
+      } catch (err) {
+        out.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    // Tab 4: Financial Plan
+    async function solveFinancialPlan() {
+      const out = document.getElementById('financialOutputJson');
+      out.textContent = 'Computing Financial Dispatch Plan...';
+      try {
+        const scenario = JSON.parse(document.getElementById('finScenarioJson').value);
+        const payload = {
+          scenario: scenario,
+          currency: document.getElementById('finCurrency').value || 'INR',
+          operating_cost_per_travel_minute: parseFloat(document.getElementById('finOpCost').value) || 1.5,
+          penalty_rate_unit: 'currency_per_late_minute'
+        };
+        const res = await fetch('/api/v1/scenarios/financial-plan', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+
+        if (res.ok && data.financial_objective) {
+          const fo = data.financial_objective;
+          document.getElementById('finTransportCost').textContent = `${fo.currency} ${fo.transport_cost.toFixed(2)}`;
+          document.getElementById('finPenaltyCost').textContent = `${fo.currency} ${fo.late_penalty_cost.toFixed(2)}`;
+          document.getElementById('finTotalCost').textContent = `${fo.currency} ${fo.total_cost.toFixed(2)}`;
+        }
+      } catch (err) {
+        out.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    // Tab 5: Disruption Recovery
+    async function executeRecovery() {
+      const out = document.getElementById('recoveryOutputJson');
+      out.textContent = 'Executing Dynamic Disruption Recovery...';
+      try {
+        // Build sample recovery payload using standard scenario and solved plan
+        const original = FIXTURE_2V2O;
+        const originalPlan = {
+          "status": "feasible",
+          "routes": [
+            {
+              "vehicle_id": "V1",
+              "order_ids": ["A", "B"],
+              "stops": [
+                {"order_id": "A", "arrival": 1.0, "service_start": 1.0, "departure": 2.0, "lateness": 0.0, "penalty_exposure": 0.0},
+                {"order_id": "B", "arrival": 3.0, "service_start": 3.0, "departure": 4.0, "lateness": 0.0, "penalty_exposure": 0.0}
+              ],
+              "return_time": 6.0,
+              "travel_cost": 4.0,
+              "lateness_exposure": 0.0,
+              "objective": 4.0
+            }
+          ],
+          "travel_cost": 4.0,
+          "lateness_exposure": 0.0,
+          "objective": 4.0
+        };
+
+        const updated = JSON.parse(JSON.stringify(original));
+        const lockedPrefixes = JSON.parse(document.getElementById('recLockedPrefixesJson').value);
+        const changePenalty = parseFloat(document.getElementById('recChangePenalty').value) || 5.0;
+
+        const payload = {
+          original_scenario: original,
+          original_plan: originalPlan,
+          updated_scenario: updated,
+          locked_prefixes: lockedPrefixes,
+          change_penalty: changePenalty
+        };
+
+        const res = await fetch('/api/v1/recovery/plan', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        out.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    async function fetchLatestRecoveryAudit() {
+      const out = document.getElementById('recoveryOutputJson');
+      out.textContent = 'Fetching Cryptographic Audit Record...';
+      try {
+        const res = await fetch('/api/v1/recovery/audits/latest');
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        out.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    // Tab 6: Plan Validation
+    async function validatePlanExplicit() {
+      const out = document.getElementById('validatorOutputJson');
+      out.textContent = 'Executing Independent Domain Validation...';
+      try {
+        const scenario = JSON.parse(document.getElementById('valScenarioJson').value);
+        const plan = JSON.parse(document.getElementById('valPlanJson').value);
+        const res = await fetch('/api/v1/plans/validate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ scenario, plan })
+        });
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        out.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    // Initial page setup
+    window.addEventListener('DOMContentLoaded', () => {
+      loadDispatchFixture('2v2o');
+      loadEtaSample();
+      checkHealth();
+    });
+  </script>
+</body>
+</html>

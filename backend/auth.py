@@ -141,7 +141,7 @@ def authorize_request(config: AuthConfig, method: str, path: str,
     if not config.ready:
         return 503, "auth_misconfigured", "token authorization is not configured", False
     method = method.upper()
-    if method == "GET" and path == "/api/v1/health":
+    if method == "GET" and (path == "/api/v1/health" or path in ("/", "/ui", "/favicon.ico")):
         return None
     token = authorization[len(b"Bearer "):] if authorization.startswith(b"Bearer ") else b""
     if not token:
