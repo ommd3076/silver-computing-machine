@@ -92,8 +92,8 @@ def main() -> None:
 
     print(f"    - Batch Inference Latency: {t_infer:.2f} ms for {len(rows)} samples ({t_infer / len(rows):.3f} ms/sample)")
 
-    # 3. Custom Real-World Simulation
-    print(f"\n[3] Real-World Delivery Scenario Simulation:")
+    # 3. Custom Real-World Simulation (Classical vs Quantum)
+    print(f"\n[3] Real-World Delivery Scenario Simulation (Bangalore Dinner Rush):")
     print("    Parameters: Bangalore (BANG), 4.2 km distance, Dinner Rush, High Traffic, Motorcycle")
     
     custom_sample = {name: 0.0 for name in feature_names}
@@ -118,11 +118,40 @@ def main() -> None:
     X_custom = np.array([[custom_sample[col] for col in feature_names]], dtype=np.float64)
     pred_custom = float(model.predict(X_custom)[0])
 
-    print(f"    -----------------------------------------------------")
-    print(f"    --> PREDICTED CLASSICAL ETA: {pred_custom:.1f} MINUTES ({pred_custom:.2f} min)")
-    print(f"    -----------------------------------------------------")
-    print(f"\n[OK] Classical model execution completed successfully.\n")
+    # Compute Quantum VQC Residual Corrections
+    if str(_root) not in sys.path:
+        sys.path.insert(0, str(_root))
+    from artifacts.run2_india.india_eta_vqc4_cpu_release_v1.circuit import NumpyFourQubitResidualVQC
+    prep = json.loads((release_dir / "preprocessing_artifacts.json").read_text(encoding="utf-8"))
+    scale = prep["scaling"]
+    dmin, dmax = float(scale["haversine_distance_min"]), float(scale["haversine_distance_max"])
+
+    q_dist = np.clip((custom_sample["haversine_distance_km"] - dmin) / (dmax - dmin), 0.0, 1.0)
+    q_cong = np.clip(0.60 * custom_sample["traffic_density_ordinal_imp"] / 3.0 + 0.25 * custom_sample["is_rush_hour"], 0.0, 1.0)
+    q_multi = np.clip(custom_sample["multiple_deliveries_imp"] / 3.0, 0.0, 1.0)
+    q_prep = np.clip((custom_sample["order_to_pickup_min_imp"] - 5.0) / 10.0, 0.0, 1.0)
+    qx = np.array([[q_dist, q_cong, q_multi, q_prep]], dtype=np.float64)
+
+    m60 = NumpyFourQubitResidualVQC.from_payload(json.loads((release_dir / "baseline60.json").read_text(encoding="utf-8")))
+    m76 = NumpyFourQubitResidualVQC.from_payload(json.loads((release_dir / "extended76.json").read_text(encoding="utf-8")))
+    resid60 = float(m60.predict_residual_minutes(qx)[0])
+    resid76 = float(m76.predict_residual_minutes(qx)[0])
+
+    hybrid60 = max(0.0, pred_custom + resid60)
+    hybrid76 = max(0.0, pred_custom + resid76)
+
+    print(f"    - Quantum Features:          dist={q_dist:.3f}, cong={q_cong:.3f}, multi={q_multi:.3f}, prep={q_prep:.3f}")
+    print(f"    - Baseline GBDT ETA:         {pred_custom:.2f} min ({pred_custom:.4f} min)")
+    print(f"    - Quantum VQC-60 Delta:      {resid60:+.4f} min (60 variational angles)")
+    print(f"    - Quantum VQC-76 Delta:      {resid76:+.4f} min (76 variational angles)")
+    print(f"    -----------------------------------------------------------------")
+    print(f"    --> CLASSICAL GBDT PREDICTION:       {pred_custom:.2f} MINUTES  (Operational: alpha=0.0)")
+    print(f"    --> QUANTUM HYBRID ETA (Baseline 60): {hybrid60:.2f} MINUTES  (Residual: {resid60:+.2f} min)")
+    print(f"    --> QUANTUM HYBRID ETA (Extended 76): {hybrid76:.2f} MINUTES  (Residual: {resid76:+.2f} min)")
+    print(f"    -----------------------------------------------------------------")
+    print(f"\n[OK] Model execution and Quantum comparison completed successfully.\n")
 
 
 if __name__ == "__main__":
     main()
+
