@@ -1,0 +1,126 @@
+{
+  "status": "FAIL",
+  "capture_kind": "Playwright Chromium headless with GPU disabled; current exported Expo web bundle; real local API8001; 390x844 mobile viewport; not native/device evidence",
+  "export_url": "http://127.0.0.1:8082/",
+  "api_url": "http://127.0.0.1:8001",
+  "api_health_status": 200,
+  "api_health_keys": [
+    "api_version",
+    "capacity",
+    "engines_available",
+    "status",
+    "timestamp",
+    "version"
+  ],
+  "screenshots": [
+    {
+      "file": "mobile-screens/flow-01-home-driver-a.png",
+      "gate": "ROOTA live API session for Ramesh Kumar",
+      "visible_text_sha256": "28ebaa0fa62761811903dd0fc45e3ede03ebb6bf19d0140c9b80f854163acac9",
+      "visible_text_excerpt": "a arQ Today ↻ DRIVER SHIFT Good shift, Ramesh Kumar EN_ROUTE ASSIGNED VEHICLE vehicle_1 ROUTE V1 DISTANCE 12.7 km EST. DRIVE 20 min Server route estimate · no live GPS Your route View stops 2 stop_1 Address unavailable › 3 stop_2 Address un"
+    },
+    {
+      "file": "mobile-screens/flow-02-home-driver-b.png",
+      "gate": "ROOTB separate live API session for Suresh Patel",
+      "visible_text_sha256": "cf297ed58f893f93a4b2f700d0c1bd807de1bd7b7ae3a23c8fcdeefbe1d68bf9",
+      "visible_text_excerpt": "a arQ Today ↻ DRIVER SHIFT Good shift, Suresh Patel EN_ROUTE ASSIGNED VEHICLE vehicle_2 ROUTE V1 DISTANCE 9.8 km EST. DRIVE 14 min Server route estimate · no live GPS Your route View stops 2 stop_3 Address unavailable › 3 stop_4 Address una"
+    },
+    {
+      "file": "mobile-screens/flow-03-active-route-map.png",
+      "gate": "Active route map rendered with MapLibre canvas and route overview",
+      "visible_text_sha256": "3756a6eca7c5e4b0e47a02e767e5a7a86932989c7da83cae7a6c7a1872aad8bf",
+      "visible_text_excerpt": "a arQ Active route ↻ PLANNED ROUTE Route v1 ROUTE OVERVIEW Planned route Open map © OpenStreetMap contributors | MapLibre Map tiles unavailable · route and stops remain visible Planned path 2 stops Planned route and stops · no live location"
+    },
+    {
+      "file": "mobile-screens/flow-04-navigation.png",
+      "gate": "planned next stop guidance rendered",
+      "visible_text_sha256": "aa379649a19912aa600a3dd2737827422b8a40c8b2c8c9a7d8d3b69ea7841d1a",
+      "visible_text_excerpt": "a arQ Route guidance ↻ ROUTE OVERVIEW Planned route Open map © OpenStreetMap contributors | MapLibre Map tiles unavailable · route and stops remain visible Planned path 2 stops ROUTE GUIDANCE Next stop stop_1 Stop address unavailable This s"
+    },
+    {
+      "file": "mobile-screens/flow-05-stops.png",
+      "gate": "stop list or explicit no-stops state rendered",
+      "visible_text_sha256": "af1239a7c3e79307e6dc7b27c801e1abdc833a3190d8fec2913d422a21e02006",
+      "visible_text_excerpt": "a arQ Stops ↻ Stops 2 PLANNED Order supplied by the current manifest · v1 2 stop_1 Address unavailable › 3 stop_2 Address unavailable › Refresh route ⌂ Home ⌁ Route ☷ Stops ⚙ Settings"
+    },
+    {
+      "file": "mobile-screens/flow-06-report-form.png",
+      "gate": "report form before editing or submission",
+      "visible_text_sha256": "552f8c02746275dcd03d4366e58e6d197f765356c14333151892fd56c48fb60f",
+      "visible_text_excerpt": "a arQ Report congestion ↻ ROUTE v1 Report a delay Your report goes to dispatch as a proposal. It does not change the route. SEVERITY Moderate Heavy WHAT IS HAPPENING? Send to dispatch No route update occurs until dispatch approves a proposa"
+    },
+    {
+      "file": "mobile-screens/flow-07-report-heavy.png",
+      "gate": "heavy severity and QA note selected before submission",
+      "visible_text_sha256": "552f8c02746275dcd03d4366e58e6d197f765356c14333151892fd56c48fb60f",
+      "visible_text_excerpt": "a arQ Report congestion ↻ ROUTE v1 Report a delay Your report goes to dispatch as a proposal. It does not change the route. SEVERITY Moderate Heavy WHAT IS HAPPENING? Send to dispatch No route update occurs until dispatch approves a proposa"
+    },
+    {
+      "file": "mobile-screens/flow-08-report-pending.png",
+      "gate": "real report response and its dispatch proposal result",
+      "visible_text_sha256": "a0dc52a355a2aebb4022941a0d7177c0ad6de1d433ccbea2c4bb1445b9ceb024",
+      "visible_text_excerpt": "a arQ Replan status ↻ AWAITING DISPATCH Report received Dispatch review is pending. Your current route remains active. PROPOSAL proposal_a6b621e911424617921ba6d800053913 BASED ON ROUTE Version 1 PUBLISHED No VALIDATION pending_dispatcher_va"
+    }
+  ],
+  "console_diagnostics": [
+    {
+      "driver": "driver A",
+      "type": "console",
+      "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+    },
+    {
+      "driver": "driver A",
+      "type": "console",
+      "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+    },
+    {
+      "driver": "driver A",
+      "type": "console",
+      "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+    },
+    {
+      "driver": "driver A",
+      "type": "console",
+      "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+    },
+    {
+      "driver": "driver A",
+      "type": "console",
+      "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+    },
+    {
+      "driver": "driver A",
+      "type": "console",
+      "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+    },
+    {
+      "driver": "driver A",
+      "type": "console",
+      "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+    },
+    {
+      "driver": "driver A",
+      "type": "console",
+      "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+    },
+    {
+      "driver": "driver A",
+      "type": "console",
+      "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+    },
+    {
+      "driver": "driver A",
+      "type": "console",
+      "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+    }
+  ],
+  "proposal": {
+    "proposal_id": "proposal_a6b621e911424617921ba6d800053913",
+    "vehicle_id": "vehicle_1",
+    "driver_id": "driver_1",
+    "decision": "PROPOSE_ROUTE",
+    "base_route_version": 1,
+    "job_id": "job_cong_53e8602a5a16"
+  },
+  "error": "locator.waitFor: Timeout 25000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Review approval' }) to be visible\u001b[22m\n"
+}

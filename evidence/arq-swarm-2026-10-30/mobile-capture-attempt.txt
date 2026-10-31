@@ -1,0 +1,12 @@
+locator.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: 'View route guidance' })[22m
+
+    at C:\ommd3076\Proejcts\nmit-hackathon\evidence\arq-swarm-2026-10-30\capture-mobile-playwright.mjs:56:67
+Captured before failure: mobile-screens/01-pair-driver-1.png, mobile-screens/02-home-driver-1.png, mobile-screens/03-pair-driver-2.png, mobile-screens/04-home-driver-2.png, mobile-screens/05-route-map.png
+Browser diagnostics: [
+  {
+    "type": "pageerror",
+    "text": "Cannot read properties of undefined (reading 'Map')"
+  }
+]

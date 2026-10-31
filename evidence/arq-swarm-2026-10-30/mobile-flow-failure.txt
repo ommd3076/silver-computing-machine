@@ -1,0 +1,58 @@
+locator.waitFor: Timeout 25000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: 'Review approval' }) to be visible[22m
+
+    at C:\ommd3076\Proejcts\nmit-hackathon\evidence\arq-swarm-2026-10-30\rootfull-flow.mjs:91:58
+Screenshots captured: mobile-screens/flow-01-home-driver-a.png, mobile-screens/flow-02-home-driver-b.png, mobile-screens/flow-03-active-route-map.png, mobile-screens/flow-04-navigation.png, mobile-screens/flow-05-stops.png, mobile-screens/flow-06-report-form.png, mobile-screens/flow-07-report-heavy.png, mobile-screens/flow-08-report-pending.png
+Diagnostics: [
+  {
+    "driver": "driver A",
+    "type": "console",
+    "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+  },
+  {
+    "driver": "driver A",
+    "type": "console",
+    "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+  },
+  {
+    "driver": "driver A",
+    "type": "console",
+    "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+  },
+  {
+    "driver": "driver A",
+    "type": "console",
+    "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+  },
+  {
+    "driver": "driver A",
+    "type": "console",
+    "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+  },
+  {
+    "driver": "driver A",
+    "type": "console",
+    "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+  },
+  {
+    "driver": "driver A",
+    "type": "console",
+    "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+  },
+  {
+    "driver": "driver A",
+    "type": "console",
+    "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+  },
+  {
+    "driver": "driver A",
+    "type": "console",
+    "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+  },
+  {
+    "driver": "driver A",
+    "type": "console",
+    "text": "Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED"
+  }
+]

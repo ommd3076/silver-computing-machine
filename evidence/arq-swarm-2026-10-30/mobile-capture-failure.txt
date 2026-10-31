@@ -1,0 +1,8 @@
+Mobile viewport capture could not be completed.
+
+1. `cua.getState()` returned an empty browser inventory and `Browsers: Error: The browser access host is unavailable`.
+2. `cua.getApp({ windowId: 328834 })` for the visible Brave window returned `Accessibility state unavailable for window 328834`.
+3. Local Edge and Brave remote-debugging attempts failed before page interaction with CDP `Target crashed`. Direct Edge diagnostic output ended with `GPU process isn't usable. Goodbye.`
+4. No screenshot file was created. Do not interpret this as an app visual failure or native device test.
+
+The exported app remains served on loopback port 8082 so another browser-capable session can continue visual QA.
