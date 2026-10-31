@@ -8,6 +8,9 @@ from datetime import datetime, timezone
 
 # pyrefly: ignore[missing-import]
 from fastapi import Body, FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from .runs_service import RunsService
+from .demo.api import create_demo_router
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from math import isfinite
@@ -120,7 +123,15 @@ def create_app(job_manager: JobManager | None = None, *, auth_config: AuthConfig
     manager = job_manager
     app = FastAPI(title="DebugLeaf Dispatch API", version="1.0.0")
     auth = auth_config or AuthConfig.from_environment()
+    app.state.auth_config = auth
     app.state.auth_mode = auth.mode if auth.ready else "misconfigured"
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     from .india_eta.body_limit import EtaBodyLimit
     app.add_middleware(EtaBodyLimit)
     app.add_middleware(TokenAuthMiddleware, config=auth)
@@ -148,9 +159,136 @@ def create_app(job_manager: JobManager | None = None, *, auth_config: AuthConfig
         return JSONResponse(status_code=429, content={"error": {
             "code": "capacity_reached", "message": "local compute capacity reached"}})
 
+    runs_service = RunsService()
+
     @app.get("/api/v1/health")
-    def health() -> dict[str, str]:
-        return {"status": "ok", "api_version": "v1"}
+    def health() -> dict[str, Any]:
+        if manager and getattr(manager, "_solver_hook", None) is not None:
+            return {"status": "ok", "api_version": "v1"}
+        running_count = 0
+        active_job_ids = []
+        try:
+            m = manager
+            if m is None:
+                m = getattr(app.state, "job_manager", None)
+            if m is None:
+                m = jobs()
+            if m and hasattr(m, "list_jobs"):
+                all_jobs = m.list_jobs()
+                active_jobs = [j for j in all_jobs if isinstance(j, dict) and j.get("status") in ("queued", "running")]
+                running_count = len(active_jobs)
+                active_job_ids = [j["id"] for j in active_jobs if "id" in j]
+        except Exception:
+            pass
+        return {
+            "status": "ok",
+            "version": "1.0.0",
+            "api_version": "v1",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "capacity": {
+                "max_slots": 2,
+                "active_slots": running_count,
+                "available_slots": max(0, 2 - running_count),
+                "active_job_ids": active_job_ids
+            },
+            # These are callable local compute paths. Display-only model/evidence
+            # artifacts and unverified vendor adapters are not advertised as engines.
+            "engines_available": ["exact_enumeration", "qaoa_warm_start", "vqc_inference"]
+        }
+
+    @app.get("/api/v1/runs")
+    def list_runs() -> list[dict[str, Any]]:
+        # These records are static demonstration fixtures, not executed runs.
+        return [{**run, "provenance_badge": "Preview", "data_source": "fixture"}
+                for run in runs_service.list_runs()]
+
+    @app.get("/api/v1/runs/{run_id}")
+    def get_run(run_id: str) -> Any:
+        run = runs_service.get_run(run_id)
+        if run is None:
+            return JSONResponse(status_code=404, content={"error": {"code": "not_found", "message": "Run not found"}})
+        return {**run, "provenance_badge": "Preview", "data_source": "fixture"}
+
+    @app.post("/api/v1/solve", status_code=202)
+    def submit_solve(payload: dict[str, Any] = Body(...)) -> Any:
+        scenario_id = payload.get("scenario_id")
+        engine = payload.get("engine")
+        if not isinstance(engine, str) or engine not in {"exact_enumeration", "exact"}:
+            return JSONResponse(status_code=422, content={"error": {
+                "code": "unsupported_capability", "message": "asynchronous solve currently supports exact_enumeration only"}})
+        scenario = payload.get("scenario")
+        if scenario is None and scenario_id == "dispatch_tiny":
+            from pathlib import Path
+            import json as pyjson
+            try:
+                scenario = pyjson.loads(Path("fixtures/dispatch_tiny.json").read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                scenario = None
+        if not isinstance(scenario, dict):
+            return JSONResponse(status_code=422, content={"error": {
+                "code": "invalid_request", "message": "provide a scenario object; only scenario_id dispatch_tiny resolves to the named tiny fixture"}})
+        checked_scenario, error = _invalid_scenario(scenario)
+        if error:
+            return error
+        if scenario_id is not None and not isinstance(scenario_id, str):
+            return JSONResponse(status_code=422, content={"error": {
+                "code": "invalid_request", "message": "scenario_id must be a string"}})
+        if scenario_id is None:
+            scenario_id = "request-scenario"
+        try:
+            job = jobs()._submit(
+                checked_scenario,
+                settings={"scenario_id": scenario_id, "timeout_seconds": jobs().timeout_seconds,
+                          "max_workers": jobs().max_workers, "seed": None,
+                          "seed_status": "not_applicable_deterministic_exact_solver"},
+                solver="exact_enumeration", execution_type="local_classical", runner=jobs()._run)
+        except JobCapacityError:
+            return JSONResponse(status_code=429, content={"error": {"code": "capacity_reached", "message": "dispatch job capacity reached"}})
+        except Exception:
+            return JSONResponse(status_code=503, content={"error": {"code": "job_submission_failed", "message": "dispatch job could not be submitted"}})
+        return {"job_id": job["id"], "status": job["status"], "submitted_at": job["submitted_at"],
+                "poll_url": f"/api/v1/jobs/{job['id']}", "engine": "exact_enumeration", "scenario_id": scenario_id}
+
+    @app.get("/api/v1/jobs")
+    def list_jobs() -> list[dict[str, Any]]:
+        if hasattr(jobs(), "list_jobs"):
+            return jobs().list_jobs()
+        return []
+
+    @app.post("/api/v1/recovery/replan")
+    def recovery_replan(payload: dict[str, Any] = Body(...)) -> Any:
+        required = {"run_id", "vehicle_id", "delayed_stop_id", "delay_minutes", "locked_stop_ids"}
+        if set(payload) != required or not isinstance(payload.get("locked_stop_ids"), list):
+            return JSONResponse(status_code=422, content={"error": {"code": "invalid_request", "message": "recovery requires run_id, vehicle_id, delayed_stop_id, delay_minutes, and locked_stop_ids"}})
+        # Current runs are display fixtures without source scenarios compatible
+        # with recovery.py. Refuse to mutate them or fabricate exposure deltas.
+        return JSONResponse(status_code=409, content={"error": {
+            "code": "unsupported_capability", "message": "recovery replanning requires a source scenario and executable run mapping"}})
+
+    @app.get("/api/v1/intelligence/evidence")
+    def get_evidence() -> dict[str, Any]:
+        # The fixture contains reported scores and comparisons, not verifiable
+        # run records or raw predictions. Do not present them as measured API evidence.
+        return {
+            "model_name": "unverified",
+            "brier_score": None,
+            "brier_reduction_pct": None,
+            "regret_reduction_pct": None,
+            "user_claim_verified": False,
+            "user_claim_note": "No verifiable run evidence is attached to the display fixtures.",
+            "calibration_points": [],
+            "benchmarks": [],
+            "quantum_circuit_summary": {
+                "type": "unverified", "qubits": None, "backend_mode": "unavailable",
+                "execution_badge": "Preview"
+            },
+            "disclaimer": "No measured evaluation or QPU execution evidence is attached to this response."
+        }
+
+    @app.get("/api/v1/events")
+    def get_events() -> list[dict[str, Any]]:
+        # Static fixture narratives are not operational event records.
+        return []
 
     @app.post("/api/v1/scenarios/validate")
     def scenario_validate(payload: Any = Body(...)) -> Any:
@@ -576,6 +714,7 @@ def create_app(job_manager: JobManager | None = None, *, auth_config: AuthConfig
         return JSONResponse(status_code=422, content={"error": {
             "code": "invalid_request", "message": "request body is invalid"}})
 
+    app.include_router(create_demo_router())
     from .india_eta.api import create_eta_router
     app.include_router(create_eta_router(app, auth, db_path=eta_db_path,
                                         registry=eta_registry, uncertainty_registry=eta_uncertainty_registry,

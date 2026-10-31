@@ -74,6 +74,14 @@ _ADMIN_ONLY = {
     ("GET", "/api/v1/recovery/audits/latest"),
 }
 
+_DEMO_DRIVER_ROUTES = {
+    ("POST", "/api/v1/demo/sessions"),
+    ("DELETE", "/api/v1/demo/sessions/current"),
+    ("GET", "/api/v1/demo/me"), ("GET", "/api/v1/demo/state"),
+    ("GET", "/api/v1/demo/manifest"), ("POST", "/api/v1/demo/reports"),
+    ("POST", "/api/v1/demo/acknowledgements"),
+}
+
 
 def _dynamic_route_allowed(method: str, path: str) -> bool:
     parts = path.split("/")
@@ -93,6 +101,14 @@ def _route_role_allowed(role: str, method: str, path: str) -> bool:
     method = method.upper()
     if path.startswith("/api/v1/eta/"):
         return _eta_route_allowed(role, method, path)
+    if path in ("/api/v1/demo/dispatcher/state", "/api/v1/demo/audits") or path.startswith("/api/v1/demo/proposals/"):
+        if role not in ("dispatcher", "admin"):
+            return False
+        if path.endswith("/approve"):
+            return method == "POST"
+        if path.startswith("/api/v1/demo/proposals/"):
+            return method == "GET"
+        return method == "GET"
     if role == "admin":
         return ((method, path) in (_COMMON_RESEARCHER | _DISPATCHER_ONLY | _ADMIN_ONLY) or
                 _dynamic_route_allowed(method, path))
@@ -141,6 +157,9 @@ def authorize_request(config: AuthConfig, method: str, path: str,
     if not config.ready:
         return 503, "auth_misconfigured", "token authorization is not configured", False
     method = method.upper()
+    if (method, path) in _DEMO_DRIVER_ROUTES:
+        # The demo router performs opaque driver-session validation itself.
+        return None
     if method == "GET" and path == "/api/v1/health":
         return None
     token = authorization[len(b"Bearer "):] if authorization.startswith(b"Bearer ") else b""

@@ -196,13 +196,14 @@ class JobManager:
                             runner=self._run_qaoa)
 
     def _submit(self, scenario: dict[str, Any], *, settings: dict[str, Any],
-                solver: str, execution_type: str, runner: Any) -> dict[str, Any]:
+                solver: str, execution_type: str, runner: Any,
+                job_id: str | None = None) -> dict[str, Any]:
         with self._lock:
             if self._closed:
                 raise RuntimeError("job manager is shut down")
             if self._active_count() >= self.max_workers:
                 raise JobCapacityError("job capacity reached")
-            job_id = str(uuid.uuid4())
+            job_id = job_id or str(uuid.uuid4())
             submitted = _now()
             deadline = time.time() + self.timeout_seconds
             scenario_json = json.dumps(scenario, sort_keys=True, separators=(",", ":"))
@@ -373,6 +374,29 @@ class JobManager:
                              "settings": json.loads(row["settings_json"]) if row["settings_json"] else None,
                              "request_sha256": row["request_sha256"],
                              "runtime": json.loads(row["runtime_json"]) if row["runtime_json"] else None}}
+
+    def list_jobs(self, limit: int = 50) -> list[dict[str, Any]]:
+        with self._connect() as con:
+            rows = con.execute("SELECT * FROM jobs ORDER BY submitted_at DESC LIMIT ?", (limit,)).fetchall()
+        output = []
+        for row in rows:
+            output.append({
+                "id": row["id"],
+                "status": row["status"],
+                "result": json.loads(row["result_json"]) if row["result_json"] else None,
+                "error": json.loads(row["error_json"]) if row["error_json"] else None,
+                "submitted_at": row["submitted_at"],
+                "started_at": row["started_at"],
+                "completed_at": row["completed_at"],
+                "metadata": {
+                    "execution_type": row["execution_type"],
+                    "solver": row["solver"],
+                    "settings": json.loads(row["settings_json"]) if row["settings_json"] else None,
+                    "request_sha256": row["request_sha256"],
+                    "runtime": json.loads(row["runtime_json"]) if row["runtime_json"] else None,
+                }
+            })
+        return output
 
     def cancel(self, job_id: str) -> dict[str, Any] | None:
         with self._lock:
