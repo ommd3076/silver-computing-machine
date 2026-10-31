@@ -29,3 +29,9 @@ Desktop.ini
 
 # Project-local temporary runtime cache
 .runtime/
+
+# Local diagnostics and transient UI capture artifacts.
+/debug.log
+/evidence/arq-swarm-2026-10-30/expo-go-qr.png
+/evidence/arq-swarm-2026-10-30/expo-qr-matrix.json
+/evidence/arq-swarm-2026-10-30/pytest-tmp*/

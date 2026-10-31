@@ -1,0 +1,50 @@
+{
+  "execution": "real localhost FastAPI HTTP requests; no mocks; session bearer tokens held in process memory and omitted from output",
+  "api_origin": "http://127.0.0.1:8000",
+  "health_status": 200,
+  "two_distinct_driver_sessions": true,
+  "driver_sessions": [
+    {
+      "pairing_code": "PAIR01",
+      "pair_status": 200,
+      "me_status": 200,
+      "driver_id": "driver_1",
+      "driver_name": "Ramesh Kumar",
+      "vehicle_id": "vehicle_1",
+      "state_status": 200,
+      "state_route_id": "route_v1_primary",
+      "state_route_version": 3,
+      "state_manifest_revision": 3,
+      "manifest_status": 404,
+      "manifest_route_id": null,
+      "manifest_route_version": null,
+      "manifest_version": null,
+      "report_status": 202,
+      "report_decision": "KEEP",
+      "report_proposal_status": "accepted",
+      "report_validation_status": null,
+      "revoke_status": 200
+    },
+    {
+      "pairing_code": "PAIR02",
+      "pair_status": 200,
+      "me_status": 200,
+      "driver_id": "driver_2",
+      "driver_name": "Suresh Patel",
+      "vehicle_id": "vehicle_2",
+      "state_status": 200,
+      "state_route_id": "route_v2_primary",
+      "state_route_version": 1,
+      "state_manifest_revision": 1,
+      "manifest_status": 404,
+      "manifest_route_id": null,
+      "manifest_route_version": null,
+      "manifest_version": null,
+      "report_status": 202,
+      "report_decision": "KEEP",
+      "report_proposal_status": "accepted",
+      "report_validation_status": null,
+      "revoke_status": 200
+    }
+  ]
+}
